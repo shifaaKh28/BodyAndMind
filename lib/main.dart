@@ -231,6 +231,7 @@ class TraineeScreen extends StatelessWidget {
   }
 }
 
+// The login and additional features would be modular! The project would layer other future improvement modules.
 // Login Screen
 class LoginScreen extends StatefulWidget {
   @override
@@ -254,8 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login Successful!')),
-      );
+          SnackBar(content: Text('Login Successful!')));
 
       // Navigate to the main screen
       Navigator.pushReplacement(
@@ -270,6 +270,29 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty || !RegExp(r'\S+@\S+\.\S+').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Password reset email sent!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
     }
   }
 
@@ -316,6 +339,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
+            SizedBox(height: 16),
+            TextButton(
+              onPressed: _resetPassword,
+              child: Text('Forgot Password?'),
+            ),
           ],
         ),
       ),
@@ -323,6 +351,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+// OTP Verification Screen
 class OTPScreen extends StatefulWidget {
   final String email;
 
@@ -350,8 +379,8 @@ class _OTPScreenState extends State<OTPScreen> {
       _isLoading = true;
     });
 
-    // Call your backend to verify the OTP
-    final success = await _verifyOTPWithBackend(widget.email, otp);
+    // Simulate backend OTP verification
+    final success = await _simulateBackendOTPVerification(otp);
 
     setState(() {
       _isLoading = false;
@@ -361,7 +390,7 @@ class _OTPScreenState extends State<OTPScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('OTP Verified!')),
       );
-      // Navigate to the next screen
+      // Navigate to the main screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => MainScreen()),
@@ -373,10 +402,9 @@ class _OTPScreenState extends State<OTPScreen> {
     }
   }
 
-  Future<bool> _verifyOTPWithBackend(String email, String otp) async {
-    // Simulate backend call (Replace this with an API call)
-    await Future.delayed(Duration(seconds: 2));
-    return otp == "123456"; // Replace with backend OTP verification logic
+  Future<bool> _simulateBackendOTPVerification(String otp) async {
+    await Future.delayed(Duration(seconds: 2)); // Simulating API call
+    return otp == "123456"; // Replace with actual OTP verification logic
   }
 
   @override
@@ -417,7 +445,6 @@ class _OTPScreenState extends State<OTPScreen> {
     );
   }
 }
-
 // Register Screen
 class RegisterScreen extends StatefulWidget {
   @override
@@ -439,7 +466,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // Create user with Firebase
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -449,7 +475,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         SnackBar(content: Text('Registration Successful!')),
       );
 
-      // Navigate to OTP screen or main screen
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => OTPScreen(email: _emailController.text)),
