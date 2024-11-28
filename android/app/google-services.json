@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "902126530608",
+    "project_id": "mindandbody-3c6eb",
+    "storage_bucket": "mindandbody-3c6eb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:902126530608:android:bff4a4210d94244ab87df5",
+        "android_client_info": {
+          "package_name": "com.example.swe_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOVgwgfGOVCERz0WEXEYQDc0VEeTtijwA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
