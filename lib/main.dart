@@ -224,10 +224,75 @@ class TraineeScreen extends StatelessWidget {
                 backgroundColor: Colors.green, // Green color for Login
               ),
             ),
+            SizedBox(height: 20), // Space between buttons
+
+            // Google Sign-In Button
+            ElevatedButton(
+              onPressed: () async {
+                await _signInWithGoogle(context);
+              },
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                backgroundColor: Colors.blue, // Google Blue Color
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8), // Rounded corners
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.login, color: Colors.white), // Google Sign-In icon
+                  SizedBox(width: 10),
+                  Text(
+                    'Sign in with Google',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _signInWithGoogle(BuildContext context) async {
+    final GoogleSignIn googleSignIn = GoogleSignIn();
+    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+    if (googleUser != null) {
+      final GoogleSignInAuthentication googleAuth =
+      await googleUser.authentication;
+
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      try {
+        // Sign in to Firebase with Google credentials
+        UserCredential userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+
+        // Show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google Sign-In Successful!')),
+        );
+
+        // Navigate to the next screen (e.g., MainScreen)
+        // Replace with your main screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RegisterScreen(), // Replace with your screen
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google Sign-In Failed: $e')),
+        );
+      }
+    }
   }
 }
 
