@@ -1,6 +1,5 @@
 // Project-level build.gradle
 
-// Add this buildscript block
 buildscript {
     repositories {
         google() // Google's Maven repository
@@ -8,7 +7,7 @@ buildscript {
     }
     dependencies {
         // Add the Google Services plugin classpath
-        classpath 'com.google.gms:google-services:4.4.2'
+        classpath 'com.google.gms:google-services:4.3.15'
     }
 }
 
