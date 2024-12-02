@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'main_screen.dart';
 
 class OTPScreen extends StatefulWidget {
@@ -14,9 +16,10 @@ class _OTPScreenState extends State<OTPScreen> {
   final _otpController = TextEditingController();
   bool _isLoading = false;
 
-  void _verifyOTP() async {
+  Future<void> _verifyOTP() async {
     final otp = _otpController.text;
 
+    // Validate OTP
     if (otp.isEmpty || otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please enter a valid 6-digit OTP')),
@@ -28,33 +31,39 @@ class _OTPScreenState extends State<OTPScreen> {
       _isLoading = true;
     });
 
-    // Simulate backend OTP verification
-    final success = await _simulateBackendOTPVerification(otp);
+    try {
+      // Get the OTP from Firestore
+      final doc = await FirebaseFirestore.instance.collection('otps').doc(widget.email).get();
 
-    setState(() {
-      _isLoading = false;
-    });
+      if (!doc.exists) {
+        throw Exception('OTP expired or not found.');
+      }
 
-    if (success) {
+      final storedOtp = doc['otp'];
+
+      // Verify the OTP entered by the user
+      if (otp == storedOtp) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('OTP Verified!')),
+        );
+
+        // Navigate to the Main Screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainScreen()),
+        );
+      } else {
+        throw Exception('Invalid OTP.');
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('OTP Verified!')),
+        SnackBar(content: Text('Error: ${e.toString()}')),
       );
-
-      // Navigate to the main screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid OTP. Please try again.')),
-      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
-  }
-
-  Future<bool> _simulateBackendOTPVerification(String otp) async {
-    await Future.delayed(Duration(seconds: 2)); // Simulating API call
-    return otp == "123456"; // Replace with actual OTP verification logic
   }
 
   @override
@@ -68,12 +77,15 @@ class _OTPScreenState extends State<OTPScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Display the email address
             Text(
               'Enter the OTP sent to ${widget.email}',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 20),
+
+            // OTP input field
             TextField(
               controller: _otpController,
               keyboardType: TextInputType.number,
@@ -83,6 +95,8 @@ class _OTPScreenState extends State<OTPScreen> {
               ),
             ),
             SizedBox(height: 20),
+
+            // Verify OTP button
             ElevatedButton(
               onPressed: _isLoading ? null : _verifyOTP,
               child: _isLoading
