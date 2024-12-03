@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'trainee_dashboard.dart'; // Import TraineeDashboard screen
+import 'package:swe_project/main.dart';
+import 'main_screen.dart';
+import 'trainee_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -12,42 +14,28 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  // Function to navigate to the dashboard
-  void _navigateToDashboard() {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => TraineeDashboard()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed. Please try again.')),
-      );
-    }
-  }
 
-  // Function to log in the user
   Future<void> _loginUser() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Firebase authentication
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // Notify user of successful login
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login Successful!')));
+        SnackBar(content: Text('Login Successful!')),
+      );
 
       // Navigate to the Trainee Dashboard
-      _navigateToDashboard();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => TraineeDashboard()),
+      );
     } on FirebaseAuthException catch (e) {
-      // Handle login error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.message}')),
       );
@@ -58,7 +46,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Function to reset password
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
 
@@ -70,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      // Firebase password reset
+      // Send password reset email
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -95,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Email input field
+            // Email Field
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
@@ -106,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             SizedBox(height: 16),
 
-            // Password input field
+            // Password Field
             TextField(
               controller: _passwordController,
               obscureText: true,
@@ -117,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             SizedBox(height: 24),
 
-            // Login button
+            // Login Button
             ElevatedButton(
               onPressed: _isLoading ? null : _loginUser,
               style: ElevatedButton.styleFrom(
@@ -128,19 +115,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   ? CircularProgressIndicator(color: Colors.white)
                   : Text(
                 'Login (התחברות)',
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             SizedBox(height: 16),
 
-            // Forgot password button
+            // Forgot Password Button
             TextButton(
               onPressed: _resetPassword,
-              child: Text(
-                'Forgot Password? (שכחת סיסמה?)',
-                style: TextStyle(color: Colors.blue),
-              ),
+              child: Text('Forgot Password?'),
             ),
           ],
         ),
