@@ -12,6 +12,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  // Function to navigate to the dashboard
+  void _navigateToDashboard() {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => TraineeDashboard()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed. Please try again.')),
+      );
+    }
+  }
+
   // Function to log in the user
   Future<void> _loginUser() async {
     setState(() {
@@ -27,14 +42,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Notify user of successful login
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login Successful!')),
-      );
+          SnackBar(content: Text('Login Successful!')));
 
       // Navigate to the Trainee Dashboard
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => TraineeDashboard()),
-      );
+      _navigateToDashboard();
     } on FirebaseAuthException catch (e) {
       // Handle login error
       ScaffoldMessenger.of(context).showSnackBar(
@@ -66,7 +77,6 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text('Password reset email sent!')),
       );
     } catch (e) {
-      // Handle reset password error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
       );
@@ -95,6 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             SizedBox(height: 16),
+
             // Password input field
             TextField(
               controller: _passwordController,
@@ -105,6 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             SizedBox(height: 24),
+
             // Login button
             ElevatedButton(
               onPressed: _isLoading ? null : _loginUser,
@@ -116,10 +128,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ? CircularProgressIndicator(color: Colors.white)
                   : Text(
                 'Login (התחברות)',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             SizedBox(height: 16),
+
             // Forgot password button
             TextButton(
               onPressed: _resetPassword,
