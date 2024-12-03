@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'screens/login_screen.dart';
-import 'screens/register_screen.dart';
-import 'screens/trainee_screen.dart';
 import 'screens/trainee_dashboard.dart';
 import 'screens/trainer_screen.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,44 +21,17 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.grey[200],
       ),
-      // Always start at the MainScreen
       initialRoute: '/',
       routes: {
-        '/': (context) => AuthStateWrapper(),
-        '/trainee': (context) => TraineeScreen(),
+        '/': (context) => MainScreen(),
+        '/trainee': (context) => LoginScreen(),
+        '/traineeDashboard': (context) => TraineeDashboard(),
         '/trainer': (context) => TrainerScreen(),
-        '/login': (context) => LoginScreen(),
-        '/register': (context) => RegisterScreen(),
-        '/dashboard': (context) => TraineeDashboard(),
       },
     );
   }
 }
 
-class AuthStateWrapper extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Check the authentication state
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(), // Stream that listens for auth state changes
-      builder: (context, snapshot) {
-        // If the user is logged in
-        if (snapshot.connectionState == ConnectionState.active) {
-          if (snapshot.hasData) {
-            return TraineeDashboard(); // User is logged in, go to MainScreen
-          } else {
-            return MainScreen(); // User is not logged in, go to LoginScreen
-          }
-        }
-
-        // While waiting for the auth state
-        return Center(child: CircularProgressIndicator());
-      },
-    );
-  }
-}
-
-// Main Screen
 class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -189,141 +159,5 @@ class MainScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-// Trainer Screen
-class TrainerScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Trainer Screen'),
-      ),
-      body: Center(child: Text('Trainer Options Coming Soon!')),
-    );
-  }
-}
-
-// Trainee Screen
-class TraineeScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Trainee Screen (מתאמן)'),
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Register Button
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => RegisterScreen()),
-                );
-              },
-              icon: Icon(Icons.app_registration), // Icon for Register
-              label: Text(
-                'Register (רישום)',
-                style: TextStyle(fontSize: 18),
-              ),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                backgroundColor: Colors.blueAccent,
-              ),
-            ),
-            SizedBox(height: 20), // Space between buttons
-
-            // Login Button
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
-                );
-              },
-              icon: Icon(Icons.login), // Icon for Login
-              label: Text(
-                'Login (התחברות)',
-                style: TextStyle(fontSize: 18),
-              ),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                backgroundColor: Colors.green, // Green color for Login
-              ),
-            ),
-            SizedBox(height: 20), // Space between buttons
-
-            // Google Sign-In Button
-            ElevatedButton(
-              onPressed: () async {
-                await _signInWithGoogle(context);
-              },
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                backgroundColor: Colors.blue, // Google Blue Color
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8), // Rounded corners
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.login, color: Colors.white), // Google Sign-In icon
-                  SizedBox(width: 10),
-                  Text(
-                    'Sign in with Google',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _signInWithGoogle(BuildContext context) async {
-    final GoogleSignIn googleSignIn = GoogleSignIn();
-    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
-    if (googleUser != null) {
-      final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
-
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      try {
-        // Sign in to Firebase with Google credentials
-        UserCredential userCredential =
-        await FirebaseAuth.instance.signInWithCredential(credential);
-
-        // Show a success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google Sign-In Successful!')),
-        );
-
-        // Navigate to the next screen (e.g., MainScreen)
-        // Replace with your main screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RegisterScreen(), // Replace with your screen
-          ),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google Sign-In Failed: $e')),
-        );
-      }
-    }
   }
 }
