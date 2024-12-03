@@ -27,12 +27,35 @@ class MyApp extends StatelessWidget {
       // Always start at the MainScreen
       initialRoute: '/',
       routes: {
-        '/': (context) => MainScreen(),
+        '/': (context) => AuthStateWrapper(),
         '/trainee': (context) => TraineeScreen(),
         '/trainer': (context) => TrainerScreen(),
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/dashboard': (context) => TraineeDashboard(),
+      },
+    );
+  }
+}
+
+class AuthStateWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Check the authentication state
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(), // Stream that listens for auth state changes
+      builder: (context, snapshot) {
+        // If the user is logged in
+        if (snapshot.connectionState == ConnectionState.active) {
+          if (snapshot.hasData) {
+            return TraineeDashboard(); // User is logged in, go to MainScreen
+          } else {
+            return MainScreen(); // User is not logged in, go to LoginScreen
+          }
+        }
+
+        // While waiting for the auth state
+        return Center(child: CircularProgressIndicator());
       },
     );
   }
