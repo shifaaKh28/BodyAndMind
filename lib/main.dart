@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/trainee_dashboard.dart';
 import 'screens/trainer_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +25,9 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => MainScreen(),
-        '/trainee': (context) => LoginScreen(),
+        '/traineeOptions': (context) => TraineeOptionsScreen(),
+        '/login': (context) => LoginScreen(),
+        '/register': (context) => RegisterScreen(),
         '/traineeDashboard': (context) => TraineeDashboard(),
         '/trainer': (context) => TrainerScreen(),
       },
@@ -105,7 +108,7 @@ class MainScreen extends StatelessWidget {
                       icon: Icons.person,
                       label: 'Trainee\nמתאמן',
                       onPressed: () {
-                        Navigator.pushNamed(context, '/trainee');
+                        Navigator.pushNamed(context, '/traineeOptions');
                       },
                     ),
                   ],
@@ -154,6 +157,39 @@ class MainScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 color: Colors.blueAccent,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// New TraineeOptionsScreen
+class TraineeOptionsScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Trainee Options (אפשרויות מתאמן)'),
+        backgroundColor: Colors.blueAccent,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/login');
+              },
+              child: Text('Login (התחברות)'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/register');
+              },
+              child: Text('Register (רישום)'),
             ),
           ],
         ),
