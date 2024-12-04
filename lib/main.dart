@@ -33,6 +33,7 @@ class MyApp extends StatelessWidget {
         '/trainer': (context) => TrainerScreen(),
         '/trainerLogin': (context) => TrainerLoginScreen(), // Add Trainer Login route
         '/trainerDashboard': (context) => TrainerDashboard(), // Add Trainer Dashboard route
+         '/trainerRegister': (context) => TrainerRegisterScreen(), // Trainer Registration route
       },
 
     );
