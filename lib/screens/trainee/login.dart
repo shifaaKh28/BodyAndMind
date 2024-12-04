@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:swe_project/main.dart';
@@ -20,21 +21,39 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // Authenticate with Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login Successful!')),
-      );
+      // Check if the user exists in the 'trainees' collection
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('trainees')
+          .doc(userCredential.user!.uid)
+          .get();
 
-      // Navigate to the Trainee Dashboard
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => TraineeDashboard()),
-      );
+      if (userDoc.exists) {
+        // User is a trainee, proceed to Trainee Dashboard
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login Successful!')),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => TraineeDashboard()),
+        );
+      } else {
+        // User is not a trainee
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You are not registered as a trainee.')),
+        );
+
+        // Sign out the user to prevent unauthorized access
+        FirebaseAuth.instance.signOut();
+      }
     } on FirebaseAuthException catch (e) {
+      // Handle Firebase Authentication errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.message}')),
       );
