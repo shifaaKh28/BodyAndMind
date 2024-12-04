@@ -12,6 +12,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController(); // Added Phone Controller
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
@@ -30,18 +31,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordController.text.trim(),
       );
 
-      // Update user's display name to indicate their role (trainer or trainee)
-      String role = isTrainer ? 'trainer' : 'trainee';
-      await userCredential.user!.updateProfile(displayName: role);
-
       // Save user details to Firestore
-      String collection = isTrainer ? 'trainers' : 'trainees';
-      await FirebaseFirestore.instance.collection(collection).doc(userCredential.user!.uid).set({
+      await FirebaseFirestore.instance.collection('trainees').doc(userCredential.user!.uid).set({
         'email': _emailController.text.trim(),
         'name': _nameController.text.trim(),
-        'role': role,
+        'phone': _phoneController.text.trim(), // Save phone number
+        'role': 'trainee',
       });
 
+      // Notify user of successful registration
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Registration Successful!')),
       );
@@ -54,14 +52,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
     } on FirebaseAuthException catch (e) {
-      // Handle registration errors
+      // Handle Firebase Authentication errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.message}')),
       );
     } catch (e) {
-      // Handle any other errors
+      // Handle unexpected errors
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        SnackBar(content: Text('An unexpected error occurred: ${e.toString()}')),
       );
     } finally {
       setState(() {
@@ -70,18 +68,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Register (רישום)'),
+        title: Text('Register as Trainee (רישום כמתאמן)'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
                 controller: _nameController,
@@ -115,6 +113,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               SizedBox(height: 16),
               TextFormField(
+                controller: _phoneController, // Phone Number Field
+                decoration: InputDecoration(
+                  labelText: 'Phone Number (מספר טלפון)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your phone number';
+                  }
+                  if (!RegExp(r'^\d{10,15}$').hasMatch(value)) {
+                    return 'Please enter a valid phone number';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(
                   labelText: 'Password (סיסמה)',
@@ -129,51 +145,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
               ),
               SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Register as Trainee Button
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => _registerUser(isTrainer: false),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: _isLoading
-                          ? CircularProgressIndicator(color: Colors.white)
-                          : Text(
-                              'Register as Trainee\n(רישום כמתאמן)', // Add a line break
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                    ),
-                  ),
-                  SizedBox(width: 16), // Add spacing between buttons
-                  // Register as Trainer Button
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => _registerUser(isTrainer: true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: _isLoading
-                          ? CircularProgressIndicator(color: Colors.white)
-                          : Text(
-                              'Register as Trainer\n(רישום כמאמן)', // Add a line break
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                    ),
-                  ),
-                ],
+              ElevatedButton(
+                onPressed: _isLoading
+                    ? null
+                    : () => _registerUser(isTrainer: false),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: _isLoading
+                    ? CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                  'Register as Trainee (רישום כמתאמן)',
+                  style:
+                  TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
