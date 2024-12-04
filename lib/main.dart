@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:swe_project/screens/register_screen.dart';
 import 'screens/trainee_dashboard.dart';
 import 'screens/trainer_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/register_screen.dart';
+import 'screens/trainer_login_screen.dart';
+import 'screens/trainer_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +31,10 @@ class MyApp extends StatelessWidget {
         '/register': (context) => RegisterScreen(),
         '/traineeDashboard': (context) => TraineeDashboard(),
         '/trainer': (context) => TrainerScreen(),
+        '/trainerLogin': (context) => TrainerLoginScreen(), // Add Trainer Login route
+        '/trainerDashboard': (context) => TrainerDashboard(), // Add Trainer Dashboard route
       },
+
     );
   }
 }
