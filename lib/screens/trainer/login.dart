@@ -24,7 +24,6 @@ class _TrainerLoginScreenState extends State<TrainerLoginScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login Successful!')),
-
       );
 
       // Navigate to Trainer Dashboard
@@ -75,6 +74,13 @@ class _TrainerLoginScreenState extends State<TrainerLoginScreen> {
               child: _isLoading
                   ? CircularProgressIndicator(color: Colors.white)
                   : Text('Login as Trainer'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context,
+                    '/trainerRegister'); // Match the route name exactly
+              },
+              child: Text('Don’t have an account? Register here'),
             ),
           ],
         ),
