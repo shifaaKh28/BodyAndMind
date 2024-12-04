@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'otp.dart';
@@ -14,7 +15,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _registerUser() async {
+  Future<void> _registerUser({required bool isTrainer}) async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -23,10 +24,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       // Register user with Firebase Authentication
+      UserCredential userCredential =
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
+      // Update user's display name to indicate their role (trainer or trainee)
+      String role = isTrainer ? 'trainer' : 'trainee';
+      await userCredential.user!.updateProfile(displayName: role);
+
+      // Save user details to Firestore
+      String collection = isTrainer ? 'trainers' : 'trainees';
+      await FirebaseFirestore.instance.collection(collection).doc(userCredential.user!.uid).set({
+        'email': _emailController.text.trim(),
+        'name': _nameController.text.trim(),
+        'role': role,
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Registration Successful!')),
@@ -44,12 +58,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.message}')),
       );
+    } catch (e) {
+      // Handle any other errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -109,19 +129,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
               ),
               SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _registerUser,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                  'Register (רישום)',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Register as Trainee Button
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () => _registerUser(isTrainer: false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: _isLoading
+                          ? CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              'Register as Trainee\n(רישום כמתאמן)', // Add a line break
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                    ),
+                  ),
+                  SizedBox(width: 16), // Add spacing between buttons
+                  // Register as Trainer Button
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () => _registerUser(isTrainer: true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: _isLoading
+                          ? CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              'Register as Trainer\n(רישום כמאמן)', // Add a line break
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
