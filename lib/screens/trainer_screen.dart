@@ -7,7 +7,17 @@ class TrainerScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Trainer Screen'),
       ),
-      body: Center(child: Text('Trainer Options Coming Soon!')),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/trainerLogin');
+          },
+          child: Text(
+            'Login as Trainer',
+            style: TextStyle(fontSize: 18),
+          ),
+        ),
+      ),
     );
   }
 }
