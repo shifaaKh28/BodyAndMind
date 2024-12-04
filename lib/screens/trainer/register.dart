@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../Trainee//otp.dart';
@@ -23,17 +24,25 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
 
     try {
       // Register trainer with Firebase Authentication
+      UserCredential userCredential =
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
+      // Save trainer details to Firestore
+      await FirebaseFirestore.instance.collection('trainers').doc(userCredential.user!.uid).set({
+        'email': _emailController.text.trim(),
+        'name': _nameController.text.trim(),
+        'role': 'trainer',
+      });
+
+      // Notify the user of success
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Registration Successful!')),
-
       );
 
-      // Navigate to OTP Screen
+      // Navigate to OTP Screen or Trainer Dashboard
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -42,8 +51,28 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
       );
     } on FirebaseAuthException catch (e) {
       // Handle registration errors
+      String errorMessage;
+      switch (e.code) {
+        case 'email-already-in-use':
+          errorMessage = 'The email is already in use by another account.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'The email address is invalid.';
+          break;
+        case 'weak-password':
+          errorMessage = 'The password is too weak.';
+          break;
+        default:
+          errorMessage = 'An error occurred. Please try again.';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.message}')),
+        SnackBar(content: Text('Error: $errorMessage')),
+      );
+    } catch (e) {
+      // Handle unexpected errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An unexpected error occurred: ${e.toString()}')),
       );
     } finally {
       setState(() {
@@ -51,6 +80,7 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
