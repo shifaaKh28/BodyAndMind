@@ -8,14 +8,29 @@ class TrainerScreen extends StatelessWidget {
         title: Text('Trainer Screen'),
       ),
       body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pushNamed(context, '/trainerLogin');
-          },
-          child: Text(
-            'Login as Trainer',
-            style: TextStyle(fontSize: 18),
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/trainerLogin');
+              },
+              child: Text(
+                'Login as Trainer',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+            SizedBox(height: 16), // Add space between the buttons
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/trainerRegister');
+              },
+              child: Text(
+                'Register as Trainer',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
         ),
       ),
     );
