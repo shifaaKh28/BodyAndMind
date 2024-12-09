@@ -38,11 +38,19 @@ class _TrainerLoginScreenState extends State<TrainerLoginScreen> {
           .get();
 
       if (userDoc.exists) {
-        // User is a trainer, proceed to Trainer Dashboard
+        // Extract trainer details
+        final trainerData = userDoc.data() as Map<String, dynamic>;
+        final trainerName = trainerData['name'] ?? 'Trainer';
+        final trainerPhone = trainerData['phone'] ?? 'Unknown';
+
+        // Show login success message with trainer's name and phone
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login Successful!')),
+          SnackBar(
+            content: Text('Welcome back, $trainerName! Phone: $trainerPhone'),
+          ),
         );
 
+        // Navigate to Trainer Dashboard
         Navigator.pushReplacementNamed(context, '/trainerDashboard');
       } else {
         // User is not a trainer
