@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'Screens/Trainee//register.dart';
-import 'Screens//Trainee/dashboard.dart';
-import 'Screens/Trainer/home.dart';
-import 'Screens/Trainee//login.dart';
-import 'Screens/Trainer/login.dart';
+import 'package:swe_project/screens/trainer/login.dart';
+import 'package:swe_project/screens/trainer/profile/profile_screen.dart';
+import 'Screens/Trainee/dashboard.dart';
+import 'Screens/Trainee/login.dart';
+import 'Screens/Trainee/register.dart';
 import 'Screens/Trainer/dashboard.dart';
-import 'Screens/Trainer/profile/profile_screen.dart';
-import 'Screens/Trainer/register.dart';
+import 'Screens/Trainer/home.dart';
+import 'Screens/Trainer/login.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,9 +36,8 @@ class MyApp extends StatelessWidget {
         '/trainerLogin': (context) => TrainerLoginScreen(), // Add Trainer Login route
         '/trainerDashboard': (context) => TrainerDashboard(), // Add Trainer Dashboard route
         '/trainerRegister': (context) => TrainerRegisterScreen(), // Trainer Registration route
-        '/trainerProfile': (context) => ProfileScreen(isTrainer: true), // Pass the role dynamically
+        '/trainerprofile': (context) => ProfileScreen(isTrainer: true),
       },
-
     );
   }
 }
