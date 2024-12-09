@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:swe_project/screens/trainer/login.dart';
 import 'package:swe_project/screens/trainer/profile/profile_screen.dart';
+import 'package:swe_project/screens/trainer/register.dart';
 import 'Screens/Trainee/dashboard.dart';
 import 'Screens/Trainee/login.dart';
 import 'Screens/Trainee/register.dart';
 import 'Screens/Trainer/dashboard.dart';
 import 'Screens/Trainer/home.dart';
-import 'Screens/Trainer/login.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
