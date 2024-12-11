@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../trainer/profile/schedule.dart';
-import '../trainer/profile/trainees.dart';
-import '../trainer/profile/exercises.dart';
-import '../trainer/profile/progress.dart';
-import '../trainer/profile/notifications.dart';
+import '../Trainer/profile/schedule.dart';
+import '../Trainer/profile/trainees.dart';
+import '../Trainer/profile/exercises.dart';
+import '../Trainer/profile/progress.dart';
+import '../Trainer/profile/notifications.dart';
+import '../Trainer/profile/profile_screen.dart'; // Import Profile Screen
 
 class TrainerDashboard extends StatelessWidget {
   @override
@@ -20,6 +21,12 @@ class TrainerDashboard extends StatelessWidget {
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
           children: [
+            _buildDashboardButton(
+              context,
+              title: 'Profile', // New Profile Button
+              icon: Icons.person,
+              targetScreen: ProfileScreen(isTrainer: true), // Navigate to Profile Screen
+            ),
             _buildDashboardButton(
               context,
               title: 'Schedule',
