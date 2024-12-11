@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final bool isTrainer; // Determine if the user is a trainer or trainee
+  final bool isTrainer;
 
   ProfileScreen({required this.isTrainer});
 
@@ -14,7 +18,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-
+  final _bioController = TextEditingController(); // New Bio Controller
+  String? _profileImageUrl;
   bool _isLoading = false;
 
   @override
@@ -38,6 +43,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final data = userDoc.data() as Map<String, dynamic>;
         _nameController.text = data['name'] ?? '';
         _phoneController.text = data['phone'] ?? '';
+        _bioController.text = data['bio'] ?? ''; // Load Bio
+        _profileImageUrl = data['profileImage'] ?? 'Screenshot_20241209_191128.png'; // Load Profile Image URL
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -69,6 +76,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await FirebaseFirestore.instance.collection(collection).doc(uid).update({
         'name': _nameController.text.trim(),
         'phone': _phoneController.text.trim(),
+        'bio': _bioController.text.trim(), // Update Bio
+        'profileImage': _profileImageUrl, // Update Profile Image URL
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -85,6 +94,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedImage != null) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        String uid = FirebaseAuth.instance.currentUser!.uid;
+        final ref = FirebaseStorage.instance.ref().child('profileImages').child('$uid.jpg');
+        await ref.putFile(File(pickedImage.path));
+        final url = await ref.getDownloadURL();
+
+        setState(() {
+          _profileImageUrl = url;
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload image: ${e.toString()}')),
+        );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,6 +136,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            GestureDetector(
+              onTap: _pickImage,
+              child: CircleAvatar(
+                radius: 50,
+                backgroundImage: _profileImageUrl != null
+                    ? NetworkImage(_profileImageUrl!)
+                    : null,
+                child: _profileImageUrl == null
+                    ? Icon(Icons.camera_alt, size: 50)
+                    : null,
+              ),
+            ),
+            SizedBox(height: 16),
             TextFormField(
               controller: _nameController,
               decoration: InputDecoration(labelText: 'Name'),
@@ -106,6 +158,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               controller: _phoneController,
               decoration: InputDecoration(labelText: 'Phone Number'),
               keyboardType: TextInputType.phone,
+            ),
+            SizedBox(height: 16),
+            TextFormField(
+              controller: _bioController,
+              decoration: InputDecoration(labelText: 'Bio'),
+              maxLines: 3,
             ),
             SizedBox(height: 24),
             ElevatedButton(
