@@ -52,145 +52,153 @@ class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF000000),
-              Color(0xFF111328)
-            ], // Dark theme gradient
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: Stack(
+        children: [
+          // Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/Cbum.png', // Replace with your image path
+              fit: BoxFit.cover,
+            ),
           ),
+          // Gradient Overlay
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.8),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Main Content
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Welcome Section
+              Column(
+                children: [
+                  Text(
+                    'Welcome to',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Body & Mind Gym',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Plan your workout instantly from the app',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white60,
+                    ),
+                  ),
+                ],
+              ),
+              // Role Selection Buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildOptionCard(
+                    context,
+                    icon: Icons.shield_outlined,
+                    label: 'Trainer',
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/trainerLogin');
+                    },
+                  ),
+                  _buildOptionCard(
+                    context,
+                    icon: Icons.person_outline,
+                    label: 'Trainee',
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/traineeLogin');
+                    },
+                  ),
+                ],
+              ),
+              // Sign-up Option
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Not a member? ',
+                    style: TextStyle(
+                      color: Colors.white60,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/register');
+                    },
+                    child: Text(
+                      'Sign up',
+                      style: TextStyle(
+                        color: Colors.greenAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Option Card Widget
+  Widget _buildOptionCard(
+      BuildContext context, {
+        required IconData icon,
+        required String label,
+        required VoidCallback onPressed,
+      }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        height: 140,
+        width: 140,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Image Section
-            Column(
-              children: [
-                SizedBox(height: 40),
-                CircleAvatar(
-                  radius: 90,
-                  backgroundColor: Colors.greenAccent,
-                  child: CircleAvatar(
-                    radius: 85,
-                    backgroundImage: AssetImage(
-                      'assets/images/Cbum.png', // Your new image path
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            // Welcome Section
-            Column(
-              children: [
-                Text(
-                  'Welcome to',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white70,
-                  ),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Body&Mind',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Plan your workout instantly from the app',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white60,
-                  ),
-                ),
-              ],
-            ),
-            // Login Buttons
-            Column(
-              children: [
-                // Login with Apple
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/login');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.greenAccent,
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  icon: Icon(
-                    Icons.apple,
-                    color: Colors.black,
-                  ),
-                  label: Text(
-                    'Login with Apple',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 15),
-                // Login with Gmail
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/login');
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.greenAccent),
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  icon: Icon(
-                    Icons.mail,
-                    color: Colors.greenAccent,
-                  ),
-                  label: Text(
-                    'Login with Gmail',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.greenAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            // Sign-up Option
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Not a member? ',
-                  style: TextStyle(
-                    color: Colors.white60,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/register');
-                  },
-                  child: Text(
-                    'Sign up',
-                    style: TextStyle(
-                      color: Colors.greenAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
+            Icon(icon, size: 50, color: Colors.blueAccent),
+            SizedBox(height: 10),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueAccent,
+              ),
             ),
           ],
         ),
@@ -199,47 +207,6 @@ class MainScreen extends StatelessWidget {
   }
 }
 
-// Widget for Option Cards
-Widget _buildOptionCard({
-  required IconData icon,
-  required String label,
-  required VoidCallback onPressed,
-}) {
-  return GestureDetector(
-    onTap: onPressed,
-    child: Container(
-      height: 140,
-      width: 140,
-      decoration: BoxDecoration(
-        color: Color(0xFF2C2C54),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 50, color: Color(0xFF4CAF50)),
-          SizedBox(height: 10),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
 
 // New TraineeOptionsScreen
 class TraineeOptionsScreen extends StatelessWidget {
