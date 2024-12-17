@@ -30,8 +30,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => MainScreen(),
         '/traineeOptions': (context) => TraineeOptionsScreen(),
-        '/login': (context) => LoginScreen(),
-        '/register': (context) => ChooseRoleScreen(), // Updated to ChooseRoleScreen,
+        '/traineeLogin': (context) => LoginScreen(),
+        '/generalRegister': (context) => ChooseRoleScreen(), // Updated to ChooseRoleScreen,
         '/traineeRegister': (context) => RegisterScreen(),
         '/traineeDashboard': (context) => TraineeDashboard(),
         '/trainer': (context) => TrainerScreen(),
@@ -144,7 +144,7 @@ class MainScreen extends StatelessWidget {
                   ),
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/register');
+                      Navigator.pushNamed(context, '/generalRegister');
                     },
                     child: Text(
                       'Sign up',
