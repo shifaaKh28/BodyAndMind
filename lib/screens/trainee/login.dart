@@ -15,7 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
 
-  Future<void> _loginUser() async {
+ Future<void> _loginUser() async {
     setState(() {
       _isLoading = true;
     });
@@ -27,29 +27,45 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
 
+      final uid = userCredential.user!.uid;
+
       // Check if the user exists in the 'trainees' collection
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+      DocumentSnapshot traineeDoc = await FirebaseFirestore.instance
           .collection('trainees')
-          .doc(userCredential.user!.uid)
+          .doc(uid)
           .get();
 
-      if (userDoc.exists) {
-        // User is a trainee, proceed to Trainee Dashboard
+      // Check if the user exists in the 'trainers' collection
+      DocumentSnapshot trainerDoc = await FirebaseFirestore.instance
+          .collection('trainers')
+          .doc(uid)
+          .get();
+
+      if (trainerDoc.exists) {
+        // Redirect trainers automatically to Trainer Dashboard
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login Successful!')),
+          SnackBar(content: Text('Welcome, Trainer! Redirecting to Trainer Dashboard...')),
         );
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => TraineeDashboard()),
+          MaterialPageRoute(builder: (context) => TrainerDashboard()), // Redirect to Trainer Dashboard
         );
-      } else {
-        // User is not a trainee
+      } else if (traineeDoc.exists) {
+        // Redirect trainees to Trainee Dashboard
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('You are not registered as a trainee.')),
+          SnackBar(content: Text('Welcome, Trainee! Redirecting to Trainee Dashboard...')),
         );
 
-        // Sign out the user to prevent unauthorized access
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => TraineeDashboard()), // Redirect to Trainee Dashboard
+        );
+      } else {
+        // User not found in either collection
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User not registered as a trainee or trainer.')),
+        );
         FirebaseAuth.instance.signOut();
       }
     } on FirebaseAuthException catch (e) {
