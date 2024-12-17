@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:swe_project/main.dart';
+import '/Screens/Trainer/dashboard.dart';
 import 'dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
 
- Future<void> _loginUser() async {
+  Future<void> _loginUser() async {
     setState(() {
       _isLoading = true;
     });
@@ -79,6 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
+
 
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
