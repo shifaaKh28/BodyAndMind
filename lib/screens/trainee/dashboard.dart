@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import '../trainee/profile/schedule.dart';
-import '../trainee/profile/exercises.dart';
-import '../trainee/profile/reminders.dart';
-import '../trainee/profile/progress.dart';
-import '../trainee/profile/profile_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 class TraineeDashboard extends StatelessWidget {
   @override
@@ -15,40 +12,59 @@ class TraineeDashboard extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDashboardButton(
-              context,
-              title: 'Profile',
-              icon: Icons.person,
-              targetScreen: TraineeProfileScreen(),
+            Text(
+              'Welcome, Trainee!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueAccent,
+              ),
             ),
-            _buildDashboardButton(
-              context,
-              title: 'Schedule',
-              icon: Icons.schedule,
-              targetScreen: ScheduleScreen(),
-            ),
-            _buildDashboardButton(
-              context,
-              title: 'Exercises',
-              icon: Icons.fitness_center,
-              targetScreen: ExercisesScreen(),
-            ),
-            _buildDashboardButton(
-              context,
-              title: 'Reminders',
-              icon: Icons.notifications,
-              targetScreen: RemindersScreen(),
-            ),
-            _buildDashboardButton(
-              context,
-              title: 'Progress',
-              icon: Icons.bar_chart,
-              targetScreen: ProgressScreen(),
+            SizedBox(height: 20),
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                children: [
+                  _buildDashboardCard(
+                    context: context,
+                    title: 'View Workouts',
+                    icon: Icons.fitness_center,
+                    onTap: () {
+                      // Navigate to Workouts screen
+                    },
+                  ),
+                  _buildDashboardCard(
+                    context: context,
+                    title: 'Track Progress',
+                    icon: Icons.bar_chart,
+                    onTap: () {
+                      // Navigate to Progress screen
+                    },
+                  ),
+                  _buildDashboardCard(
+                    context: context,
+                    title: 'Profile Settings',
+                    icon: Icons.person,
+                    onTap: () {
+                      // Navigate to Profile screen
+                    },
+                  ),
+                  _buildDashboardCard(
+                    context: context,
+                    title: 'Log Out',
+                    icon: Icons.logout,
+                    onTap: () {
+                      FirebaseAuth.instance.signOut();
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -56,27 +72,19 @@ class TraineeDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildDashboardButton(BuildContext context,
-      {required String title, required IconData icon, required Widget targetScreen}) {
+  Widget _buildDashboardCard({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => targetScreen),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
+      onTap: onTap,
+      child: Card(
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6,
-              offset: Offset(0, 4),
-            ),
-          ],
         ),
+        elevation: 4,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
