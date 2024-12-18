@@ -2,17 +2,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dashboard.dart';
 
-class LoginScreen extends StatefulWidget {
+class TraineeLoginScreen extends StatefulWidget {
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  _TraineeLoginScreenState createState() => _TraineeLoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
   final _emailOrPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _loginUser() async {
+  Future<void> _loginTrainee() async {
     final input = _emailOrPhoneController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Login Button
                   ElevatedButton(
-                    onPressed: _isLoading ? null : _loginUser,
+                    onPressed: _isLoading ? null : _loginTrainee,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
