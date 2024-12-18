@@ -72,7 +72,8 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
     } catch (e) {
       // Handle unexpected errors
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An unexpected error occurred: ${e.toString()}')),
+        SnackBar(
+            content: Text('An unexpected error occurred: ${e.toString()}')),
       );
     } finally {
       setState(() {
@@ -85,177 +86,136 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background Image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/Cbum.png',
-              fit: BoxFit.cover,
-            ),
-          ),
-          // Gradient Overlay
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.3),
-                    Colors.black.withOpacity(0.8),
-                  ],
+      backgroundColor: Colors.black, // Dark background
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Container(
+            padding: EdgeInsets.all(20.0),
+            decoration: BoxDecoration(
+              color: Colors.grey[900], // Dark container background
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black54,
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
                 ),
-              ),
+              ],
             ),
-          ),
-          // Registration Form
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Container(
-                padding: EdgeInsets.all(20.0),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Center(
+                    child: Text(
+                      'Register as Trainer',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
                     ),
-                  ],
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title
-                      Center(
-                        child: Text(
-                          'Register as Trainer',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueAccent,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      // Name Field
-                      _buildTextField(
-                        controller: _nameController,
-                        label: 'Name',
-                        icon: Icons.person_outline,
-                        validator: (value) =>
-                        value!.isEmpty ? 'Please enter your name' : null,
-                      ),
-                      SizedBox(height: 16),
-                      // Email Field
-                      _buildTextField(
-                        controller: _emailController,
-                        label: 'Email',
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
-                          }
-                          if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
-                            return 'Please enter a valid email';
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 16),
-                      // Phone Field
-                      _buildTextField(
-                        controller: _phoneController,
-                        label: 'Phone Number',
-                        icon: Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your phone number';
-                          }
-                          if (!RegExp(r'^\d{10,15}$').hasMatch(value)) {
-                            return 'Please enter a valid phone number';
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 16),
-                      // Password Field
-                      _buildTextField(
-                        controller: _passwordController,
-                        label: 'Password',
-                        icon: Icons.lock_outline,
-                        obscureText: true,
-                        validator: (value) {
-                          if (value == null || value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 24),
-                      // Register Button
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _registerTrainer,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? CircularProgressIndicator(color: Colors.white)
-                              : Text(
-                            'Register as Trainer',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
-                ),
+                  SizedBox(height: 20),
+
+                  // Name Field
+                  _buildDarkTextField(
+                    controller: _nameController,
+                    label: 'Name',
+                    icon: Icons.person_outline,
+                  ),
+                  SizedBox(height: 16),
+
+                  // Email Field
+                  _buildDarkTextField(
+                    controller: _emailController,
+                    label: 'Email',
+                    icon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  SizedBox(height: 16),
+
+                  // Phone Field
+                  _buildDarkTextField(
+                    controller: _phoneController,
+                    label: 'Phone Number',
+                    icon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
+                  ),
+                  SizedBox(height: 16),
+
+                  // Password Field
+                  _buildDarkTextField(
+                    controller: _passwordController,
+                    label: 'Password',
+                    icon: Icons.lock_outline,
+                    obscureText: true,
+                  ),
+                  SizedBox(height: 24),
+
+                  // Register Button
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _registerTrainer,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 50, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                        'Register as Trainer',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  // TextField Builder
-  Widget _buildTextField({
+// TextField Builder with Dark Theme
+  Widget _buildDarkTextField({
     required TextEditingController controller,
     required String label,
     required IconData icon,
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
-    required String? Function(String?) validator,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      style: TextStyle(color: Colors.white),
+      // White text color
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: Colors.blueAccent),
+        labelStyle: TextStyle(color: Colors.white70),
+        // Label text
+        prefixIcon: Icon(icon, color: Colors.orange),
+        filled: true,
+        fillColor: Colors.grey[800],
+        // Dark input background
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
         ),
       ),
-      validator: validator,
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'Please enter $label';
+        return null;
+      },
     );
   }
 }
