@@ -1,67 +1,107 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../trainee/profile/schedule.dart';
+import '../trainee/profile/exercises.dart';
+import '../trainee/profile/reminders.dart';
+import '../trainee/profile/progress.dart';
+import '../trainee/profile/body_stats.dart';
+import '../trainee/profile/profile_screen.dart';
 
+class TraineeDashboard extends StatefulWidget {
+  @override
+  _TraineeDashboardState createState() => _TraineeDashboardState();
+}
 
-class TraineeDashboard extends StatelessWidget {
+class _TraineeDashboardState extends State<TraineeDashboard> {
+  String _traineeName = 'Shifaa'; // Replace with dynamic fetching if needed
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Trainee Dashboard'),
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      backgroundColor: Color(0xFF1E1E2E), // Dark background
+      body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Welcome, Trainee!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueAccent,
+            // Header Section
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundImage: AssetImage('assets/profile_placeholder.png'),
+                  ),
+                  SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Hello, $_traineeName',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Welcome back!',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                  Spacer(),
+                  Icon(Icons.notifications_outlined,
+                      color: Colors.white70, size: 28),
+                ],
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 10),
+
+            // Options Grid
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
+                padding: const EdgeInsets.all(16),
                 children: [
-                  _buildDashboardCard(
-                    context: context,
-                    title: 'View Workouts',
-                    icon: Icons.fitness_center,
-                    onTap: () {
-                      // Navigate to Workouts screen
-                    },
+                  _buildOptionCard(
+                    title: 'Profile',
+                    icon: Icons.person_outline,
+                    color: Colors.blueAccent,
+                    targetScreen: TraineeProfileScreen(),
                   ),
-                  _buildDashboardCard(
-                    context: context,
-                    title: 'Track Progress',
-                    icon: Icons.bar_chart,
-                    onTap: () {
-                      // Navigate to Progress screen
-                    },
+                  _buildOptionCard(
+                    title: 'Schedule',
+                    icon: Icons.calendar_today,
+                    color: Colors.greenAccent,
+                    targetScreen: ScheduleScreen(),
                   ),
-                  _buildDashboardCard(
-                    context: context,
-                    title: 'Profile Settings',
-                    icon: Icons.person,
-                    onTap: () {
-                      // Navigate to Profile screen
-                    },
+                  _buildOptionCard(
+                    title: 'Exercises',
+                    icon: Icons.fitness_center_outlined,
+                    color: Colors.orangeAccent,
+                    targetScreen: ExercisesScreen(),
                   ),
-                  _buildDashboardCard(
-                    context: context,
-                    title: 'Log Out',
-                    icon: Icons.logout,
-                    onTap: () {
-                      FirebaseAuth.instance.signOut();
-                      Navigator.pushReplacementNamed(context, '/login');
-                    },
+                  _buildOptionCard(
+                    title: 'Reminders',
+                    icon: Icons.notifications_active_outlined,
+                    color: Colors.redAccent,
+                    targetScreen: RemindersScreen(),
+                  ),
+                  _buildOptionCard(
+                    title: 'Progress',
+                    icon: Icons.show_chart,
+                    color: Colors.purpleAccent,
+                    targetScreen: ProgressScreen(),
+                  ),
+                  _buildOptionCard(
+                    title: 'Body Stats',
+                    icon: Icons.accessibility_new,
+                    color: Colors.amberAccent,
+                    targetScreen: BodyStatsScreen(),
                   ),
                 ],
               ),
@@ -72,31 +112,43 @@ class TraineeDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildDashboardCard({
-    required BuildContext context,
+  // Option Card Widget
+  Widget _buildOptionCard({
     required String title,
     required IconData icon,
-    required VoidCallback onTap,
+    required Color color,
+    required Widget targetScreen,
   }) {
     return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => targetScreen),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.4),
+              blurRadius: 8,
+              offset: Offset(2, 4),
+            ),
+          ],
         ),
-        elevation: 4,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: Colors.blueAccent),
-            SizedBox(height: 10),
+            Icon(icon, size: 40, color: color),
+            SizedBox(height: 8),
             Text(
               title,
-              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.blueAccent,
+                color: Colors.white,
               ),
             ),
           ],
