@@ -24,10 +24,8 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
     setState(() => _isLoading = true);
 
     if (_isPhoneNumber(input)) {
-      // Login using phone number
       await _loginWithPhone(input);
     } else {
-      // Login using email
       await _loginWithEmail(input, password);
     }
 
@@ -35,7 +33,7 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
   }
 
   bool _isPhoneNumber(String input) {
-    final phoneRegex = RegExp(r'^0\d{9}$'); // Ensure it starts with 0 and has 10 digits
+    final phoneRegex = RegExp(r'^0\d{9}$'); // Israeli phone format
     return phoneRegex.hasMatch(input);
   }
 
@@ -52,10 +50,8 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
   }
 
   Future<void> _loginWithPhone(String phoneNumber) async {
-    // Disable app verification for testing (ONLY FOR DEVELOPMENT)
     FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);
-
-    String formattedPhone = '+972' + phoneNumber.substring(1); // Convert local to E.164
+    String formattedPhone = '+972' + phoneNumber.substring(1);
 
     await FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: formattedPhone,
@@ -73,8 +69,6 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
     );
   }
 
-
-
   void _showOTPDialog(String verificationId) {
     final _otpController = TextEditingController();
 
@@ -82,15 +76,26 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Enter OTP'),
+          backgroundColor: Colors.grey[900],
+          title: Text('Enter OTP', style: TextStyle(color: Colors.white)),
           content: TextField(
             controller: _otpController,
-            decoration: InputDecoration(labelText: 'OTP Code'),
+            style: TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: 'OTP Code',
+              labelStyle: TextStyle(color: Colors.white54),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white54),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue),
+              ),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
+              child: Text('Cancel', style: TextStyle(color: Colors.white70)),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -105,6 +110,7 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
                   _showError('Invalid OTP');
                 }
               },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
               child: Text('Submit'),
             ),
           ],
@@ -127,18 +133,19 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Container(
-              padding: EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.grey[900],
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
+                    color: Colors.black54,
                     blurRadius: 10,
                     offset: Offset(0, 4),
                   ),
@@ -153,7 +160,7 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green,
+                      color: Colors.blue,
                     ),
                   ),
                   SizedBox(height: 20),
@@ -161,10 +168,17 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
                   // Email/Phone Field
                   TextField(
                     controller: _emailOrPhoneController,
+                    style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       labelText: 'Email or Phone',
-                      prefixIcon: Icon(Icons.email, color: Colors.green),
-                      border: OutlineInputBorder(
+                      labelStyle: TextStyle(color: Colors.white54),
+                      prefixIcon: Icon(Icons.email, color: Colors.blue),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white24),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.blue),
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
@@ -175,10 +189,17 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
                   TextField(
                     controller: _passwordController,
                     obscureText: true,
+                    style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock, color: Colors.green),
-                      border: OutlineInputBorder(
+                      labelStyle: TextStyle(color: Colors.white54),
+                      prefixIcon: Icon(Icons.lock, color: Colors.blue),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white24),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.blue),
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
@@ -189,39 +210,34 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
                   ElevatedButton(
                     onPressed: _isLoading ? null : _loginTrainee,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: Colors.blue,
                       padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
                     child: _isLoading
-                        ? CircularProgressIndicator(color: Colors.white)
+                        ? CircularProgressIndicator(color: Colors.black)
                         : Text(
                       'Login',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
+                      style: TextStyle(fontSize: 16, color: Colors.black),
                     ),
                   ),
                   SizedBox(height: 10),
 
                   // Forgot Password
                   TextButton(
-                    onPressed: () {
-                      // Add functionality for Forgot Password
-                    },
-                    child: Text(
-                      'Forgot Password?',
-                      style: TextStyle(color: Colors.green),
-                    ),
+                    onPressed: () {},
+                    child: Text('Forgot Password?',
+                        style: TextStyle(color: Colors.blue)),
                   ),
-
-                  SizedBox(height: 10),
 
                   // Register Option
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Not a member yet? '),
+                      Text('Not a member yet? ',
+                          style: TextStyle(color: Colors.white70)),
                       GestureDetector(
                         onTap: () {
                           Navigator.pushNamed(context, '/traineeRegister');
@@ -229,7 +245,7 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
                         child: Text(
                           'Register here',
                           style: TextStyle(
-                            color: Colors.green,
+                            color: Colors.blue,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
