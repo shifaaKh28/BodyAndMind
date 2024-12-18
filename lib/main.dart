@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:swe_project/screens/trainee/login.dart';
+import 'package:swe_project/screens/trainee/register.dart';
 import 'package:swe_project/screens/trainer/login.dart';
 import 'package:swe_project/screens/trainer/profile/profile_screen.dart';
 import 'package:swe_project/screens/trainer/register.dart';
@@ -29,9 +31,9 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => MainScreen(),
         '/traineeOptions': (context) => TraineeOptionsScreen(),
-        '/traineeLogin': (context) => LoginScreen(),
-        '/generalRegister': (context) => RegisterScreen(), // Updated to ChooseRoleScreen,
-        '/traineeRegister': (context) => RegisterScreen(),
+        '/traineeLogin': (context) => TraineeLoginScreen(),
+        '/generalRegister': (context) => TraineeRegisterScreen(), // Updated to ChooseRoleScreen,
+        '/traineeRegister': (context) => TraineeRegisterScreen(),
         '/traineeDashboard': (context) => TraineeDashboard(),
         '/trainer': (context) => TraineeDashboard(),
         '/trainerLogin': (context) =>
