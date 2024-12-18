@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import '../Trainer/profile/schedule.dart';
-import '../Trainer/profile/trainees.dart';
-import '../Trainer/profile/exercises.dart';
-import '../Trainer/profile/progress.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../Trainer/profile/notifications.dart';
 import '../Trainer/profile/profile_screen.dart';
 import '../trainee/profile/exercises.dart';
 import '../trainee/profile/progress.dart';
-import '../trainee/profile/schedule.dart'; // Import Profile Screen
+import '../trainee/profile/schedule.dart';
 
 class TrainerDashboard extends StatefulWidget {
   @override
@@ -15,14 +14,49 @@ class TrainerDashboard extends StatefulWidget {
 }
 
 class _TrainerDashboardState extends State<TrainerDashboard> {
-  String _trainerName = 'Shifaa'; // Replace with dynamic fetching if needed
+  String _trainerName = ''; // Holds the dynamically fetched trainer name
+  bool _isLoading = true; // Loading state
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTrainerName();
+  }
+
+  // Fetch trainer's name from Firestore
+  Future<void> _fetchTrainerName() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+
+      // Fetch the trainer's document from Firestore
+      DocumentSnapshot trainerDoc = await FirebaseFirestore.instance
+          .collection('trainers')
+          .doc(uid)
+          .get();
+
+      setState(() {
+        _trainerName = trainerDoc['name'] ?? 'Trainer';
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _trainerName = 'Trainer'; // Fallback name
+        _isLoading = false;
+      });
+      print('Error fetching trainer name: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFF1E1E2E), // Dark background
       body: SafeArea(
-        child: Column(
+        child: _isLoading
+            ? Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        )
+            : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header Section
@@ -33,7 +67,8 @@ class _TrainerDashboardState extends State<TrainerDashboard> {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundImage: AssetImage('assets/profile_placeholder.png'),
+                    backgroundImage:
+                    AssetImage('assets/profile_placeholder.png'),
                   ),
                   SizedBox(width: 16),
                   Column(
@@ -82,7 +117,6 @@ class _TrainerDashboardState extends State<TrainerDashboard> {
                     color: Colors.greenAccent,
                     targetScreen: ScheduleScreen(),
                   ),
-
                   _buildOptionCard(
                     title: 'Exercises',
                     icon: Icons.fitness_center_outlined,
