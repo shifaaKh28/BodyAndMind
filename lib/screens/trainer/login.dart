@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dashboard.dart';
 
 class TrainerLoginScreen extends StatefulWidget {
   @override
@@ -8,74 +9,110 @@ class TrainerLoginScreen extends StatefulWidget {
 }
 
 class _TrainerLoginScreenState extends State<TrainerLoginScreen> {
-  final _emailController = TextEditingController();
+  final _emailOrPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  // Determine if input is phone or email
+  bool _isPhoneNumber(String input) {
+    final phoneRegex = RegExp(r'^0\d{9}$'); // Israel phone format (10 digits, starting with 0)
+    return phoneRegex.hasMatch(input);
+  }
+
   Future<void> _loginTrainer() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all fields')),
-      );
+    final input = _emailOrPhoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (input.isEmpty || password.isEmpty) {
+      _showError('Please fill in all fields');
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
+    if (_isPhoneNumber(input)) {
+      // Login with phone number
+      await _loginWithPhone(input, password);
+    } else {
+      // Login with email
+      await _loginWithEmail(input, password);
+    }
+
+    setState(() => _isLoading = false);
+  }
+
+  Future<void> _loginWithEmail(String email, String password) async {
     try {
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+        email: email,
+        password: password,
       );
-
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('trainers')
-          .doc(userCredential.user!.uid)
-          .get();
-
-      if (userDoc.exists) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login Successful!')),
-        );
-        Navigator.pushReplacementNamed(context, '/trainerDashboard');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('You are not registered as a trainer.')),
-        );
-        await FirebaseAuth.instance.signOut();
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      await _checkTrainer(userCredential.user!.uid);
+    } on FirebaseAuthException catch (e) {
+      _showError(e.message ?? 'Invalid email or password');
     }
   }
-  Future<void> _resetPassword() async {
-    final email = _emailController.text.trim();
 
-    if (email.isEmpty || !RegExp(r'\S+@\S+\.\S+').hasMatch(email)) {
+  Future<void> _loginWithPhone(String phone, String password) async {
+    try {
+      // Convert phone to email format stored in Firestore if applicable
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('trainers')
+          .where('phone', isEqualTo: phone)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        // Use the found trainer's email for login
+        final trainerData = snapshot.docs.first.data() as Map<String, dynamic>;
+        final email = trainerData['email'];
+        await _loginWithEmail(email, password);
+      } else {
+        _showError('Phone number not registered.');
+      }
+    } catch (e) {
+      _showError('Error logging in with phone number.');
+    }
+  }
+
+  Future<void> _checkTrainer(String uid) async {
+    DocumentSnapshot userDoc =
+    await FirebaseFirestore.instance.collection('trainers').doc(uid).get();
+
+    if (userDoc.exists) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter a valid email address')),
+        SnackBar(content: Text('Login Successful!')),
       );
+      Navigator.pushReplacementNamed(context, '/trainerDashboard');
+    } else {
+      _showError('You are not registered as a trainer.');
+      await FirebaseAuth.instance.signOut();
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _resetPassword() async {
+    final emailOrPhone = _emailOrPhoneController.text.trim();
+
+    if (_isPhoneNumber(emailOrPhone)) {
+      _showError('Password reset is only supported via email.');
+      return;
+    }
+
+    if (emailOrPhone.isEmpty || !RegExp(r'\S+@\S+\.\S+').hasMatch(emailOrPhone)) {
+      _showError('Please enter a valid email address');
       return;
     }
 
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: emailOrPhone);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Password reset email sent!')),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      _showError('Error: ${e.toString()}');
     }
   }
 
@@ -127,7 +164,6 @@ class _TrainerLoginScreenState extends State<TrainerLoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title
                     Center(
                       child: Text(
                         'Trainer Login',
@@ -139,32 +175,34 @@ class _TrainerLoginScreenState extends State<TrainerLoginScreen> {
                       ),
                     ),
                     SizedBox(height: 20),
-                    // Email Field
+
+                    // Email/Phone Field
                     TextField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
+                      controller: _emailOrPhoneController,
                       decoration: InputDecoration(
-                        labelText: 'Email',
+                        labelText: 'Email or Phone',
+                        prefixIcon: Icon(Icons.person_outline, color: Colors.blueAccent),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        prefixIcon: Icon(Icons.email_outlined, color: Colors.blueAccent),
                       ),
                     ),
                     SizedBox(height: 16),
+
                     // Password Field
                     TextField(
                       controller: _passwordController,
                       obscureText: true,
                       decoration: InputDecoration(
                         labelText: 'Password',
+                        prefixIcon: Icon(Icons.lock_outline, color: Colors.blueAccent),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        prefixIcon: Icon(Icons.lock_outline, color: Colors.blueAccent),
                       ),
                     ),
                     SizedBox(height: 24),
+
                     // Login Button
                     Center(
                       child: ElevatedButton(
@@ -186,13 +224,10 @@ class _TrainerLoginScreenState extends State<TrainerLoginScreen> {
                     ),
                     SizedBox(height: 10),
 
-                    // Forgot Password Link
+                    // Forgot Password
                     Center(
                       child: TextButton(
-                        onPressed: () {
-                          // Call the reset password function here
-                          _resetPassword();
-                        },
+                        onPressed: _resetPassword,
                         child: Text(
                           'Forgot Password?',
                           style: TextStyle(
