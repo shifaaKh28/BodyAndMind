@@ -1,7 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:swe_project/main.dart';
+import 'package:flutter/material.dart';
 import 'dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -10,240 +8,239 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _emailOrPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  Future<void> _loginUser() async {
+    final input = _emailOrPhoneController.text.trim();
+    final password = _passwordController.text.trim();
 
-  Future<void> _loginTrainer() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all fields')),
-      );
+    if (input.isEmpty || password.isEmpty) {
+      _showError('Please fill in all fields');
       return;
     }
 
+    setState(() => _isLoading = true);
 
+    if (_isPhoneNumber(input)) {
+      // Login using phone number
+      await _loginWithPhone(input);
+    } else {
+      // Login using email
+      await _loginWithEmail(input, password);
+    }
+
+    setState(() => _isLoading = false);
+  }
+
+  bool _isPhoneNumber(String input) {
+    final phoneRegex = RegExp(r'^0\d{9}$'); // Ensure it starts with 0 and has 10 digits
+    return phoneRegex.hasMatch(input);
+  }
+
+  Future<void> _loginWithEmail(String email, String password) async {
     try {
-      // Authenticate with Firebase Authentication
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
-
-      // Check if the user exists in the 'trainees' collection
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('trainees')
-          .doc(userCredential.user!.uid)
-          .get();
-
-      if (userDoc.exists) {
-        // User is a trainee, proceed to Trainee Dashboard
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login Successful!')),
-        );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => TraineeDashboard()),
-        );
-      } else {
-        // User is not a trainee
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('You are not registered as a trainee.')),
-        );
-
-        // Sign out the user to prevent unauthorized access
-        FirebaseAuth.instance.signOut();
-      }
-    } on FirebaseAuthException catch (e) {
-      // Handle Firebase Authentication errors
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.message}')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      _navigateToDashboard();
+    } catch (e) {
+      _showError('Invalid email or password');
     }
   }
 
-  Future<void> _resetPassword() async {
-    final email = _emailController.text.trim();
+  Future<void> _loginWithPhone(String phoneNumber) async {
+    // Disable app verification for testing (ONLY FOR DEVELOPMENT)
+    FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);
 
-    if (email.isEmpty || !RegExp(r'\S+@\S+\.\S+').hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter a valid email address')),
-      );
-      return;
-    }
+    String formattedPhone = '+972' + phoneNumber.substring(1); // Convert local to E.164
 
-    try {
-      // Send password reset email
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: formattedPhone,
+      verificationCompleted: (credential) async {
+        await FirebaseAuth.instance.signInWithCredential(credential);
+        _navigateToDashboard();
+      },
+      verificationFailed: (error) {
+        _showError('Phone login failed: ${error.message}');
+      },
+      codeSent: (verificationId, resendToken) {
+        _showOTPDialog(verificationId);
+      },
+      codeAutoRetrievalTimeout: (verificationId) {},
+    );
+  }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Password reset email sent!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
-    }
+
+
+  void _showOTPDialog(String verificationId) {
+    final _otpController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Enter OTP'),
+          content: TextField(
+            controller: _otpController,
+            decoration: InputDecoration(labelText: 'OTP Code'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  final credential = PhoneAuthProvider.credential(
+                    verificationId: verificationId,
+                    smsCode: _otpController.text.trim(),
+                  );
+                  await FirebaseAuth.instance.signInWithCredential(credential);
+                  _navigateToDashboard();
+                } catch (e) {
+                  _showError('Invalid OTP');
+                }
+              },
+              child: Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _navigateToDashboard() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => TraineeDashboard()),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background Image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/Cbum.png', // Ensure this path is correct
-              fit: BoxFit.cover,
-            ),
-          ),
-          // Gradient Overlay
-          Positioned.fill(
+      body: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
             child: Container(
+              padding: EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.3),
-                    Colors.black.withOpacity(0.8),
-                  ],
-                ),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
               ),
-            ),
-          ),
-          // Login Form
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Container(
-                padding: EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title
+                  Text(
+                    'Login',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title
-                    Center(
-                      child: Text(
-                        'Login (התחברות)',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    // Email Field
-                    TextField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: 'Email (דוא"ל)',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        prefixIcon: Icon(Icons.email_outlined, color: Colors.green),
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    // Password Field
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: 'Password (סיסמה)',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        prefixIcon: Icon(Icons.lock_outline, color: Colors.green),
-                      ),
-                    ),
-                    SizedBox(height: 24),
-                    // Login Button
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _loginTrainer,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: _isLoading
-                            ? CircularProgressIndicator(color: Colors.white)
-                            : Text(
-                          'Login',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10),
+                  ),
+                  SizedBox(height: 20),
 
-                    // Forgot Password Link
-                    Center(
-                      child: TextButton(
-                        onPressed: _resetPassword,
+                  // Email/Phone Field
+                  TextField(
+                    controller: _emailOrPhoneController,
+                    decoration: InputDecoration(
+                      labelText: 'Email or Phone',
+                      prefixIcon: Icon(Icons.email, color: Colors.green),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Password Field
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock, color: Colors.green),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Login Button
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _loginUser,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                      'Login',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+
+                  // Forgot Password
+                  TextButton(
+                    onPressed: () {
+                      // Add functionality for Forgot Password
+                    },
+                    child: Text(
+                      'Forgot Password?',
+                      style: TextStyle(color: Colors.green),
+                    ),
+                  ),
+
+                  SizedBox(height: 10),
+
+                  // Register Option
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Not a member yet? '),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(context, '/traineeRegister');
+                        },
                         child: Text(
-                          'Forgot Password?',
-                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                          'Register here',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 10),
-                    // Register Link
-                    Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Not a trainee yet? ',
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontSize: 14,
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/traineeRegister');
-                            },
-                            child: Text(
-                              'Register here',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
