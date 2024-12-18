@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import '../trainee/profile/schedule.dart';
-import '../trainee/profile/exercises.dart';
-import '../trainee/profile/reminders.dart';
-import '../trainee/profile/progress.dart';
-import '../trainee/profile/body_stats.dart';
-import '../trainee/profile/profile_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'profile/schedule.dart';
+import 'profile/exercises.dart';
+import 'profile/reminders.dart';
+import 'profile/progress.dart';
+import 'profile/body_stats.dart';
+import 'profile/profile_screen.dart';
 
 class TraineeDashboard extends StatefulWidget {
   @override
@@ -12,14 +15,49 @@ class TraineeDashboard extends StatefulWidget {
 }
 
 class _TraineeDashboardState extends State<TraineeDashboard> {
-  String _traineeName = 'Shifaa'; // Replace with dynamic fetching if needed
+  String _traineeName = ''; // Holds the dynamically fetched trainee name
+  bool _isLoading = true; // Loading state
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTraineeName();
+  }
+
+  // Fetch trainee's name from Firestore
+  Future<void> _fetchTraineeName() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+
+      // Fetch the trainee's document from Firestore
+      DocumentSnapshot traineeDoc = await FirebaseFirestore.instance
+          .collection('trainees')
+          .doc(uid)
+          .get();
+
+      setState(() {
+        _traineeName = traineeDoc['name'] ?? 'Trainee';
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _traineeName = 'Trainee'; // Fallback name
+        _isLoading = false;
+      });
+      print('Error fetching trainee name: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFF1E1E2E), // Dark background
       body: SafeArea(
-        child: Column(
+        child: _isLoading
+            ? Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        )
+            : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header Section
