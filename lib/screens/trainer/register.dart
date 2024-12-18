@@ -32,27 +32,25 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
       );
 
       // Save trainer details to Firestore
-      await FirebaseFirestore.instance.collection('trainers').doc(userCredential.user!.uid).set({
+      await FirebaseFirestore.instance
+          .collection('trainers')
+          .doc(userCredential.user!.uid)
+          .set({
         'email': _emailController.text.trim(),
         'name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(), // Save phone number
+        'phone': _phoneController.text.trim(),
         'role': 'trainer',
       });
 
-      // Notify the user of success
+      // Notify the user of successful registration
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration Successful!')),
+        SnackBar(content: Text('Registration Successful! Please log in.')),
       );
 
-      // Navigate to OTP Screen or Trainer Dashboard
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OTPScreen(email: _emailController.text),
-        ),
-      );
+      // Redirect to Trainer Login Screen
+      Navigator.pushReplacementNamed(context, '/trainerLogin');
     } on FirebaseAuthException catch (e) {
-      // Handle registration errors
+      // Handle specific Firebase errors
       String errorMessage;
       switch (e.code) {
         case 'email-already-in-use':
@@ -83,109 +81,181 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Register as Trainer'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Name Field
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your name';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-
-              // Email Field
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-
-              // Phone Number Field
-              TextFormField(
-                controller: _phoneController, // Phone Number Field
-                decoration: InputDecoration(
-                  labelText: 'Phone Number',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your phone number';
-                  }
-                  if (!RegExp(r'^\d{10,15}$').hasMatch(value)) {
-                    return 'Please enter a valid phone number';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-
-              // Password Field
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 24),
-
-              // Register Button
-              ElevatedButton(
-                onPressed: _isLoading ? null : _registerTrainer,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                  'Register as Trainer',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+      body: Stack(
+        children: [
+          // Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/Cbum.png',
+              fit: BoxFit.cover,
+            ),
           ),
+          // Gradient Overlay
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.8),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Registration Form
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Container(
+                padding: EdgeInsets.all(20.0),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Center(
+                        child: Text(
+                          'Register as Trainer',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      // Name Field
+                      _buildTextField(
+                        controller: _nameController,
+                        label: 'Name',
+                        icon: Icons.person_outline,
+                        validator: (value) =>
+                        value!.isEmpty ? 'Please enter your name' : null,
+                      ),
+                      SizedBox(height: 16),
+                      // Email Field
+                      _buildTextField(
+                        controller: _emailController,
+                        label: 'Email',
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16),
+                      // Phone Field
+                      _buildTextField(
+                        controller: _phoneController,
+                        label: 'Phone Number',
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your phone number';
+                          }
+                          if (!RegExp(r'^\d{10,15}$').hasMatch(value)) {
+                            return 'Please enter a valid phone number';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16),
+                      // Password Field
+                      _buildTextField(
+                        controller: _passwordController,
+                        label: 'Password',
+                        icon: Icons.lock_outline,
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 24),
+                      // Register Button
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _registerTrainer,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: _isLoading
+                              ? CircularProgressIndicator(color: Colors.white)
+                              : Text(
+                            'Register as Trainer',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // TextField Builder
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
+    required String? Function(String?) validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.blueAccent),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
         ),
       ),
+      validator: validator,
     );
   }
 }
