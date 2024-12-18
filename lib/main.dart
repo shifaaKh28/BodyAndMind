@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'Screens/Trainee//register.dart';
-import 'Screens//Trainee/dashboard.dart';
-import 'Screens/Trainer/home.dart';
-import 'Screens/Trainee//login.dart';
-import 'Screens/Trainer/login.dart';
+import 'package:swe_project/screens/trainer/login.dart';
+import 'package:swe_project/screens/trainer/profile/profile_screen.dart';
+import 'package:swe_project/screens/trainer/register.dart';
+import 'Screens/Trainee/dashboard.dart';
+import 'Screens/Trainee/login.dart';
+import 'Screens/Trainee/register.dart';
 import 'Screens/Trainer/dashboard.dart';
-import 'Screens/Trainer/profile/profile_screen.dart';
-import 'Screens/Trainer/register.dart';
-import 'Screens/choose_role_screen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,10 +30,10 @@ class MyApp extends StatelessWidget {
         '/': (context) => MainScreen(),
         '/traineeOptions': (context) => TraineeOptionsScreen(),
         '/traineeLogin': (context) => LoginScreen(),
-        '/generalRegister': (context) => ChooseRoleScreen(), // Updated to ChooseRoleScreen,
+        '/generalRegister': (context) => RegisterScreen(), // Updated to ChooseRoleScreen,
         '/traineeRegister': (context) => RegisterScreen(),
         '/traineeDashboard': (context) => TraineeDashboard(),
-        '/trainer': (context) => TrainerScreen(),
+        '/trainer': (context) => TraineeDashboard(),
         '/trainerLogin': (context) =>
             TrainerLoginScreen(), // Add Trainer Login route
         '/trainerDashboard': (context) =>
@@ -118,6 +117,7 @@ class MainScreen extends StatelessWidget {
                     context,
                     icon: Icons.shield_outlined,
                     label: 'Trainer',
+                    gradientColors: [Colors.orangeAccent, Colors.deepOrange],
                     onPressed: () {
                       Navigator.pushNamed(context, '/trainerLogin');
                     },
@@ -126,6 +126,7 @@ class MainScreen extends StatelessWidget {
                     context,
                     icon: Icons.person_outline,
                     label: 'Trainee',
+                    gradientColors: [Colors.blueAccent, Colors.lightBlue],
                     onPressed: () {
                       Navigator.pushNamed(context, '/traineeLogin');
                     },
@@ -162,6 +163,55 @@ class MainScreen extends StatelessWidget {
       ),
     );
   }
+
+  // Custom Button Card for Trainer & Trainee Options
+  Widget _buildOptionCard(
+      BuildContext context, {
+        required IconData icon,
+        required String label,
+        required List<Color> gradientColors,
+        required VoidCallback onPressed,
+      }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: 140,
+        height: 160,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black45,
+              blurRadius: 8,
+              offset: Offset(2, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 60, color: Colors.white),
+            SizedBox(height: 10),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 
   // Option Card Widget
   Widget _buildOptionCard(
@@ -205,7 +255,6 @@ class MainScreen extends StatelessWidget {
       ),
     );
   }
-}
 
 
 // New TraineeOptionsScreen
