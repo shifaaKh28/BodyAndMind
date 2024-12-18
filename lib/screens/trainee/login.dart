@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:swe_project/main.dart';
-import '/Screens/Trainer/dashboard.dart';
 import 'dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,10 +15,14 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
 
-  Future<void> _loginUser() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _loginTrainer() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
 
     try {
       // Authenticate with Firebase Authentication
@@ -28,45 +31,29 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
 
-      final uid = userCredential.user!.uid;
-
       // Check if the user exists in the 'trainees' collection
-      DocumentSnapshot traineeDoc = await FirebaseFirestore.instance
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('trainees')
-          .doc(uid)
+          .doc(userCredential.user!.uid)
           .get();
 
-      // Check if the user exists in the 'trainers' collection
-      DocumentSnapshot trainerDoc = await FirebaseFirestore.instance
-          .collection('trainers')
-          .doc(uid)
-          .get();
-
-      if (trainerDoc.exists) {
-        // Redirect trainers automatically to Trainer Dashboard
+      if (userDoc.exists) {
+        // User is a trainee, proceed to Trainee Dashboard
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Welcome, Trainer! Redirecting to Trainer Dashboard...')),
+          SnackBar(content: Text('Login Successful!')),
         );
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => TrainerDashboard()), // Redirect to Trainer Dashboard
-        );
-      } else if (traineeDoc.exists) {
-        // Redirect trainees to Trainee Dashboard
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Welcome, Trainee! Redirecting to Trainee Dashboard...')),
-        );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => TraineeDashboard()), // Redirect to Trainee Dashboard
+          MaterialPageRoute(builder: (context) => TraineeDashboard()),
         );
       } else {
-        // User not found in either collection
+        // User is not a trainee
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('User not registered as a trainee or trainer.')),
+          SnackBar(content: Text('You are not registered as a trainee.')),
         );
+
+        // Sign out the user to prevent unauthorized access
         FirebaseAuth.instance.signOut();
       }
     } on FirebaseAuthException catch (e) {
@@ -80,7 +67,6 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
-
 
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
@@ -109,60 +95,155 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Login (התחברות)'),
-        backgroundColor: Colors.green,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Email Field
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'Email (דוא"ל)',
-                border: OutlineInputBorder(),
+      body: Stack(
+        children: [
+          // Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/Cbum.png', // Ensure this path is correct
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Gradient Overlay
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.8),
+                  ],
+                ),
               ),
             ),
-            SizedBox(height: 16),
+          ),
+          // Login Form
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Container(
+                padding: EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Center(
+                      child: Text(
+                        'Login (התחברות)',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    // Email Field
+                    TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Email (דוא"ל)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        prefixIcon: Icon(Icons.email_outlined, color: Colors.green),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    // Password Field
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: 'Password (סיסמה)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        prefixIcon: Icon(Icons.lock_outline, color: Colors.green),
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    // Login Button
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _loginTrainer,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? CircularProgressIndicator(color: Colors.white)
+                            : Text(
+                          'Login',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
 
-            // Password Field
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Password (סיסמה)',
-                border: OutlineInputBorder(),
+                    // Forgot Password Link
+                    Center(
+                      child: TextButton(
+                        onPressed: _resetPassword,
+                        child: Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    // Register Link
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Not a trainee yet? ',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 14,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(context, '/traineeRegister');
+                            },
+                            child: Text(
+                              'Register here',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            SizedBox(height: 24),
-
-            // Login Button
-            ElevatedButton(
-              onPressed: _isLoading ? null : _loginUser,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              child: _isLoading
-                  ? CircularProgressIndicator(color: Colors.white)
-                  : Text(
-                'Login (התחברות)',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            SizedBox(height: 16),
-
-            // Forgot Password Button
-            TextButton(
-              onPressed: _resetPassword,
-              child: Text('Forgot Password?'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
