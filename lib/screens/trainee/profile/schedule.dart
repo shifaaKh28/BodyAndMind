@@ -14,7 +14,7 @@ class ScheduleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1E1E2E),
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(
           'Workout Schedule',
@@ -75,7 +75,7 @@ class DailyScheduleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1E1E2E),
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(
           "$day's Schedule",
@@ -200,7 +200,7 @@ class _HourSelectionScreenState extends State<HourSelectionScreen> {
     final hours = _generateHours();
 
     showModalBottomSheet(
-      backgroundColor: Color(0xFF1E1E2E),
+      backgroundColor: Colors.black,
       context: context,
       builder: (BuildContext context) {
         return Container(
@@ -256,7 +256,7 @@ class _HourSelectionScreenState extends State<HourSelectionScreen> {
     final hours = _generateHours();
 
     return Scaffold(
-      backgroundColor: Color(0xFF1E1E2E),
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(
           '${widget.day} - ${widget.timeSlot}',
