@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
-class ScheduleScreen extends StatelessWidget {
+class ScheduleScreen extends StatefulWidget {
+  @override
+  _ScheduleScreenState createState() => _ScheduleScreenState();
+}
+
+class _ScheduleScreenState extends State<ScheduleScreen> with SingleTickerProviderStateMixin {
   final List<String> days = [
     'Monday',
     'Tuesday',
@@ -10,6 +15,44 @@ class ScheduleScreen extends StatelessWidget {
     'Saturday',
     'Sunday',
   ];
+
+  late AnimationController _controller;
+  late List<Animation<Offset>> _animations;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1200),
+    );
+
+    _animations = List.generate(
+      days.length,
+          (index) => Tween<Offset>(
+        begin: Offset(0, 1),
+        end: Offset(0, 0),
+      ).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Interval(
+            index * 0.1, // Delays each item slightly
+            1.0,
+            curve: Curves.easeOut,
+          ),
+        ),
+      ),
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +72,10 @@ class ScheduleScreen extends StatelessWidget {
         padding: EdgeInsets.all(12.0),
         itemCount: days.length,
         itemBuilder: (context, index) {
-          return _buildDayCard(context, days[index]);
+          return SlideTransition(
+            position: _animations[index],
+            child: _buildDayCard(context, days[index]),
+          );
         },
       ),
     );
