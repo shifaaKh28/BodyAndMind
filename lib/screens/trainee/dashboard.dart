@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'profile/schedule.dart';
 import 'profile/exercises.dart';
 import 'profile/reminders.dart';
-import 'profile/progress.dart';
 import 'profile/body_stats.dart';
 import 'profile/profile_screen.dart';
 
@@ -51,7 +50,7 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1E1E2E), // Dark background
+      backgroundColor: Colors.black, // Dark background
       body: SafeArea(
         child: _isLoading
             ? Center(
@@ -68,7 +67,8 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundImage: AssetImage('assets/profile_placeholder.png'),
+                    backgroundImage:
+                    AssetImage('assets/profile_placeholder.png'),
                   ),
                   SizedBox(width: 16),
                   Column(
@@ -84,7 +84,7 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        'Welcome back!',
+                        'Ready for today’s challenges?',
                         style: TextStyle(color: Colors.white70),
                       ),
                     ],
@@ -95,53 +95,68 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
                 ],
               ),
             ),
-            SizedBox(height: 10),
+            SizedBox(height: 20),
 
-            // Options Grid
+            // Dashboard Cards
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildOptionCard(
-                    title: 'Profile',
-                    icon: Icons.person_outline,
-                    color: Colors.blueAccent,
-                    targetScreen: TraineeProfileScreen(),
-                  ),
-                  _buildOptionCard(
-                    title: 'Schedule',
-                    icon: Icons.calendar_today,
-                    color: Colors.greenAccent,
-                    targetScreen: ScheduleScreen(),
-                  ),
-                  _buildOptionCard(
-                    title: 'Exercises',
-                    icon: Icons.fitness_center_outlined,
-                    color: Colors.orangeAccent,
-                    targetScreen: ExercisesScreen(),
-                  ),
-                  _buildOptionCard(
-                    title: 'Reminders',
-                    icon: Icons.notifications_active_outlined,
-                    color: Colors.redAccent,
-                    targetScreen: RemindersScreen(),
-                  ),
-                  _buildOptionCard(
-                    title: 'Progress',
-                    icon: Icons.show_chart,
-                    color: Colors.purpleAccent,
-                    targetScreen: ProgressScreen(),
-                  ),
-                  _buildOptionCard(
-                    title: 'Body Stats',
-                    icon: Icons.accessibility_new,
-                    color: Colors.amberAccent,
-                    targetScreen: BodyStatsScreen(),
-                  ),
-                ],
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: [
+                    // First Row of Cards
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildDashboardCard(
+                          title: 'Profile',
+                          icon: Icons.person_outline,
+                          color: Colors.blueAccent,
+                          targetScreen: TraineeProfileScreen(),
+                        ),
+                        _buildDashboardCard(
+                          title: 'Schedule',
+                          icon: Icons.calendar_today,
+                          color: Colors.greenAccent,
+                          targetScreen: ScheduleScreen(),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+
+                    // Second Row of Cards
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildDashboardCard(
+                          title: 'Exercises',
+                          icon: Icons.fitness_center_outlined,
+                          color: Colors.orangeAccent,
+                          targetScreen: ExercisesScreen(),
+                        ),
+                        _buildDashboardCard(
+                          title: 'Reminders',
+                          icon: Icons.notifications_active_outlined,
+                          color: Colors.redAccent,
+                          targetScreen: RemindersScreen(),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+
+                    // Third Row of Cards
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildDashboardCard(
+                          title: 'Body Stats',
+                          icon: Icons.accessibility_new,
+                          color: Colors.amberAccent,
+                          targetScreen: BodyStatsScreen(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -150,8 +165,8 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
     );
   }
 
-  // Option Card Widget
-  Widget _buildOptionCard({
+  // Dashboard Card Widget
+  Widget _buildDashboardCard({
     required String title,
     required IconData icon,
     required Color color,
@@ -165,14 +180,16 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
         );
       },
       child: Container(
+        width: MediaQuery.of(context).size.width * 0.42,
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
+          color: Colors.grey[900],
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.4),
+              color: color.withOpacity(0.3),
               blurRadius: 8,
-              offset: Offset(2, 4),
+              offset: Offset(4, 6),
             ),
           ],
         ),
@@ -180,7 +197,7 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 40, color: color),
-            SizedBox(height: 8),
+            SizedBox(height: 12),
             Text(
               title,
               style: TextStyle(
