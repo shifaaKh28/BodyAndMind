@@ -14,6 +14,8 @@ class _TraineeProfileScreenState extends State<TraineeProfileScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _bioController = TextEditingController();
+  bool _isEditing = false; // Tracks whether editing is enabled
+  bool _isDarkMode = true; // Default to dark mode
   String? _profileImageUrl;
   bool _isLoading = false;
 
@@ -23,43 +25,7 @@ class _TraineeProfileScreenState extends State<TraineeProfileScreen> {
     _loadProfileData();
   }
 
-  // Load Profile Data
-  Future<void> _loadProfileData() async {
-    setState(() => _isLoading = true);
-
-    try {
-      String uid = FirebaseAuth.instance.currentUser!.uid;
-
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('trainees')
-          .doc(uid)
-          .get();
-
-      if (userDoc.exists) {
-        final data = userDoc.data() as Map<String, dynamic>;
-        _nameController.text = data['name'] ?? '';
-        _phoneController.text = data['phone'] ?? '';
-        _bioController.text = data['bio'] ?? '';
-        _profileImageUrl = data['profileImage'] ?? null;
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load profile: ${e.toString()}')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  // Update Profile
   Future<void> _updateProfile() async {
-    if (_nameController.text.isEmpty || _phoneController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
@@ -75,6 +41,9 @@ class _TraineeProfileScreenState extends State<TraineeProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Profile updated successfully!')),
       );
+      setState(() {
+        _isEditing = false; // Exit edit mode after successful save
+      });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to update profile: ${e.toString()}')),
@@ -84,21 +53,39 @@ class _TraineeProfileScreenState extends State<TraineeProfileScreen> {
     }
   }
 
-  // Pick Image
+  Future<void> _loadProfileData() async {
+    setState(() => _isLoading = true);
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+
+      DocumentSnapshot userDoc =
+      await FirebaseFirestore.instance.collection('trainees').doc(uid).get();
+
+      if (userDoc.exists) {
+        final data = userDoc.data() as Map<String, dynamic>;
+        _nameController.text = data['name'] ?? '';
+        _phoneController.text = data['phone'] ?? '';
+        _bioController.text = data['bio'] ?? '';
+        _profileImageUrl = data['profileImage'];
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load profile: ${e.toString()}')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.gallery);
-
     if (pickedImage != null) {
       setState(() => _isLoading = true);
-
       try {
         String uid = FirebaseAuth.instance.currentUser!.uid;
-        final ref = FirebaseStorage.instance
-            .ref()
-            .child('traineeProfileImages')
-            .child('$uid.jpg');
-
+        final ref =
+        FirebaseStorage.instance.ref().child('profileImages/$uid.jpg');
         await ref.putFile(File(pickedImage.path));
         final url = await ref.getDownloadURL();
 
@@ -116,95 +103,174 @@ class _TraineeProfileScreenState extends State<TraineeProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1E1E2E),
+      backgroundColor: _isDarkMode ? Colors.black : Colors.white,
       appBar: AppBar(
+        title: Text(
+          'Profile',
+          style: TextStyle(color: _isDarkMode ? Colors.white : Colors.black),
+        ),
+        centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('My Profile', style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back,
+              color: _isDarkMode ? Colors.white : Colors.black),
+          onPressed: () {
+            Navigator.pop(context); // Return to Dashboard
+          },
+        ),
+        actions: [
+          // Dark Mode Toggle
+          Switch(
+            value: _isDarkMode,
+            onChanged: (value) {
+              setState(() {
+                _isDarkMode = value;
+                // Optionally implement theme switching logic
+              });
+            },
+            activeColor: Colors.blueAccent,
+          ),
+          IconButton(
+            icon: Icon(
+              _isEditing ? Icons.done : Icons.edit,
+              color: _isDarkMode ? Colors.white : Colors.black,
+            ),
+            onPressed: () {
+              setState(() {
+                _isEditing = !_isEditing;
+              });
+            },
+          )
+        ],
       ),
+
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: Colors.greenAccent))
-          : SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Profile Image
-            GestureDetector(
-              onTap: _pickImage,
-              child: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundImage: _profileImageUrl != null
-                        ? NetworkImage(_profileImageUrl!)
-                        : null,
-                    backgroundColor: Colors.grey.shade900,
-                    child: _profileImageUrl == null
-                        ? Icon(Icons.camera_alt, size: 50, color: Colors.white70)
-                        : null,
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.greenAccent,
-                        shape: BoxShape.circle,
+          ? Center(child: CircularProgressIndicator(color: Colors.blueAccent))
+          : SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                SizedBox(height: 20),
+                _buildAnimatedProfileImage(),
+                SizedBox(height: 20),
+                _buildSectionTitle('Personal Information'),
+                _buildProfileField('Name', _nameController, Icons.person, _isEditing),
+                _buildProfileField('Phone', _phoneController, Icons.phone, _isEditing,
+                    keyboardType: TextInputType.phone),
+                _buildProfileField('Bio', _bioController, Icons.description, _isEditing,
+                    maxLines: 3),
+                SizedBox(height: 20),
+                _buildSectionTitle('Recent Activities'),
+                _buildRecentActivity('Full Body Workout', '45 mins • 300 kcal', Icons.fitness_center),
+                _buildRecentActivity('Yoga Session', '30 mins • Relaxed', Icons.spa),
+                if (_isEditing)
+                  ElevatedButton(
+                    onPressed: () => _updateProfile(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      padding: EdgeInsets.all(8),
-                      child: Icon(Icons.edit, color: Colors.black),
+                      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     ),
+                    child: Text('Save Changes',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
-                ],
-              ),
+              ],
             ),
-            SizedBox(height: 20),
-            // Input Fields
-            _buildTextField('Name', _nameController, Icons.person_outline),
-            SizedBox(height: 16),
-            _buildTextField('Phone Number', _phoneController, Icons.phone_outlined),
-            SizedBox(height: 16),
-            _buildTextField('Bio', _bioController, Icons.info_outline, maxLines: 3),
-            SizedBox(height: 30),
-            // Update Button
-            ElevatedButton(
-              onPressed: _updateProfile,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.greenAccent,
-                padding: EdgeInsets.symmetric(horizontal: 60, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              child: Text(
-                'Update Profile',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  // Reusable TextField
-  Widget _buildTextField(String label, TextEditingController controller, IconData icon,
-      {int maxLines = 1}) {
-    return TextField(
-      controller: controller,
-      maxLines: maxLines,
-      style: TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.white70),
-        prefixIcon: Icon(icon, color: Colors.greenAccent),
-        filled: true,
-        fillColor: Colors.grey.shade900,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
+  Widget _buildAnimatedProfileImage() {
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircleAvatar(
+            radius: 70,
+            backgroundColor: Colors.grey[900],
+            backgroundImage: _profileImageUrl != null
+                ? NetworkImage(_profileImageUrl!)
+                : AssetImage('assets/profile_placeholder.png') as ImageProvider,
+          ),
+          if (_isEditing)
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: _pickImage,
+                child: CircleAvatar(
+                  backgroundColor: Colors.blueAccent,
+                  radius: 20,
+                  child: Icon(Icons.camera_alt, color: Colors.white),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: TextStyle(
+              fontSize: 18, fontWeight: FontWeight.bold, color: _isDarkMode ? Colors.white70 : Colors.black87),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileField(String label, TextEditingController controller, IconData icon, bool isEditable,
+      {TextInputType keyboardType = TextInputType.text, int maxLines = 1}) {
+    return Card(
+      color: _isDarkMode ? Colors.grey[900] : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: ListTile(
+        leading: Icon(icon, color: Colors.blueAccent),
+        title: TextField(
+          controller: controller,
+          enabled: isEditable,
+          maxLines: maxLines,
+          keyboardType: keyboardType,
+          style: TextStyle(color: _isDarkMode ? Colors.white : Colors.black),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: TextStyle(color: _isDarkMode ? Colors.white54 : Colors.black54),
+            border: InputBorder.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentActivity(String title, String subtitle, IconData icon) {
+    return Card(
+      color: _isDarkMode ? Colors.grey[900] : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      margin: EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        leading: Icon(icon, color: Colors.blueAccent),
+        title: Text(
+          title,
+          style: TextStyle(color: _isDarkMode ? Colors.white : Colors.black),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(color: _isDarkMode ? Colors.white70 : Colors.black87),
         ),
       ),
     );
