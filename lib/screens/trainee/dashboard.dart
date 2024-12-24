@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'profile/schedule.dart';
 import 'profile/exercises.dart';
-import 'profile/reminders.dart';
 import 'profile/body_stats.dart';
 import 'profile/profile_screen.dart';
 
@@ -13,22 +12,52 @@ class TraineeDashboard extends StatefulWidget {
   _TraineeDashboardState createState() => _TraineeDashboardState();
 }
 
-class _TraineeDashboardState extends State<TraineeDashboard> {
-  String _traineeName = ''; // Holds the dynamically fetched trainee name
-  bool _isLoading = true; // Loading state
+class _TraineeDashboardState extends State<TraineeDashboard>
+    with SingleTickerProviderStateMixin {
+  String _traineeName = '';
+  bool _isLoading = true;
+
+  late AnimationController _animationController;
+  late List<Animation<Offset>> _slideAnimations;
 
   @override
   void initState() {
     super.initState();
     _fetchTraineeName();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
+
+    _slideAnimations = List.generate(4, (index) {
+      return Tween<Offset>(
+        begin: Offset(0, 1),
+        end: Offset(0, 0),
+      ).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(
+            index * 0.2,
+            (index + 1) * 0.2,
+            curve: Curves.easeOut,
+          ),
+        ),
+      );
+    });
+
+    _animationController.forward();
   }
 
-  // Fetch trainee's name from Firestore
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   Future<void> _fetchTraineeName() async {
     try {
       final uid = FirebaseAuth.instance.currentUser!.uid;
-
-      // Fetch the trainee's document from Firestore
       DocumentSnapshot traineeDoc = await FirebaseFirestore.instance
           .collection('trainees')
           .doc(uid)
@@ -40,136 +69,110 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
       });
     } catch (e) {
       setState(() {
-        _traineeName = 'Trainee'; // Fallback name
+        _traineeName = 'Trainee';
         _isLoading = false;
       });
-      print('Error fetching trainee name: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Dark background
-      body: SafeArea(
-        child: _isLoading
-            ? Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        )
-            : Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Section
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundImage:
-                    AssetImage('assets/profile_placeholder.png'),
-                  ),
-                  SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hello, $_traineeName',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Ready for today’s challenges?',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                  Spacer(),
-                  Icon(Icons.notifications_outlined,
-                      color: Colors.white70, size: 28),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-
-            // Dashboard Cards
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueGrey.shade900, Colors.black],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: _isLoading
+              ? Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          )
+              : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Section
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
                   children: [
-                    // First Row of Cards
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundImage:
+                      AssetImage('assets/images/profile_icon.webp'),
+                    ),
+                    SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildDashboardCard(
-                          title: 'Profile',
-                          icon: Icons.person_outline,
-                          color: Colors.blueAccent,
-                          targetScreen: TraineeProfileScreen(),
+                        Text(
+                          'Hello, $_traineeName',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                        _buildDashboardCard(
-                          title: 'Schedule',
-                          icon: Icons.calendar_today,
-                          color: Colors.greenAccent,
-                          targetScreen: ScheduleScreen(),
+                        SizedBox(height: 4),
+                        Text(
+                          'Ready for today’s challenges?',
+                          style: TextStyle(color: Colors.white70),
                         ),
                       ],
                     ),
-                    SizedBox(height: 16),
-
-                    // Second Row of Cards
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildDashboardCard(
-                          title: 'Exercises',
-                          icon: Icons.fitness_center_outlined,
-                          color: Colors.orangeAccent,
-                          targetScreen: ExercisesScreen(),
-                        ),
-                        _buildDashboardCard(
-                          title: 'Reminders',
-                          icon: Icons.notifications_active_outlined,
-                          color: Colors.redAccent,
-                          targetScreen: RemindersScreen(),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-
-                    // Third Row of Cards
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildDashboardCard(
-                          title: 'Body Stats',
-                          icon: Icons.accessibility_new,
-                          color: Colors.amberAccent,
-                          targetScreen: BodyStatsScreen(),
-                        ),
-                      ],
-                    ),
+                    Spacer(),
+                    Icon(Icons.notifications_outlined,
+                        color: Colors.white70, size: 28),
                   ],
                 ),
               ),
-            ),
-          ],
+              SizedBox(height: 20),
+
+              // Dashboard Cards with Animation
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, // Two cards per row
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  padding: EdgeInsets.all(16),
+                  itemCount: 4,
+                  itemBuilder: (context, index) {
+                    return SlideTransition(
+                      position: _slideAnimations[index],
+                      child: _buildDashboardCard(
+                        title: ['Profile', 'Schedule', 'Exercises', 'Body Stats'][index],
+                        imagePath: [
+                          'assets/images/profile_icon.webp',
+                          'assets/images/schedule_icon.webp',
+                          'assets/images/exercises_icon.webp',
+                          'assets/images/body_stats_icon.webp',
+                        ][index],
+                        targetScreen: [
+                          TraineeProfileScreen(),
+                          ScheduleScreen(),
+                          ExercisesScreen(),
+                          BodyStatsScreen(),
+                        ][index],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Dashboard Card Widget
   Widget _buildDashboardCard({
     required String title,
-    required IconData icon,
-    required Color color,
+    required String imagePath,
     required Widget targetScreen,
   }) {
     return GestureDetector(
@@ -180,30 +183,51 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
         );
       },
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.42,
-        padding: EdgeInsets.all(16),
+        height: 150,
+        width: 150,
         decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 8,
-              offset: Offset(4, 6),
+              color: Colors.blueAccent.withOpacity(0.5),
+              blurRadius: 10,
+              spreadRadius: 3,
             ),
           ],
+          image: DecorationImage(
+            image: AssetImage(imagePath),
+            fit: BoxFit.cover,
+          ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            Icon(icon, size: 40, color: color),
-            SizedBox(height: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            // Overlay for text readability
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.black.withOpacity(0.4),
+              ),
+            ),
+            // Align the title at the bottom
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 2,
+                        color: Colors.black,
+                        offset: Offset(1, 1),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -211,4 +235,5 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
       ),
     );
   }
+
 }
