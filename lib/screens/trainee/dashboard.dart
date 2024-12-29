@@ -102,7 +102,7 @@ class _TraineeDashboardState extends State<TraineeDashboard>
                     CircleAvatar(
                       radius: 30,
                       backgroundImage:
-                      AssetImage('assets/images/profile_icon.webp'),
+                      AssetImage('assets/images/profile_icon.png'),
                     ),
                     SizedBox(width: 16),
                     Column(
@@ -147,10 +147,10 @@ class _TraineeDashboardState extends State<TraineeDashboard>
                       child: _buildDashboardCard(
                         title: ['Profile', 'Schedule', 'Exercises', 'Body Stats'][index],
                         imagePath: [
-                          'assets/images/profile_icon.webp',
-                          'assets/images/schedule_icon.webp',
-                          'assets/images/exercises_icon.webp',
-                          'assets/images/body_stats_icon.webp',
+                          'assets/images/profile_icon.png',
+                          'assets/images/schedule_icon.png',
+                          'assets/images/exercises_icon.png',
+                          'assets/images/body_stats_icon.jpg',
                         ][index],
                         targetScreen: [
                           TraineeProfileScreen(),
