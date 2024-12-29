@@ -8,10 +8,10 @@ class ExercisesScreen extends StatefulWidget {
 
 class _ExercisesScreenState extends State<ExercisesScreen> {
   List<Map<String, String>> exercises = [
-    {'title': 'Yoga', 'subtitle': 'Calm your mind and body.', 'image': 'assets/images/yoga.webp'},
-    {'title': 'Strength Training', 'subtitle': 'Build your muscles effectively.', 'image': 'assets/images/strength.webp'},
-    {'title': 'Cardio', 'subtitle': 'Boost your stamina and endurance.', 'image': 'assets/images/cardio.webp'},
-    {'title': 'Stretching', 'subtitle': 'Improve your flexibility.', 'image': 'assets/images/stretching.webp'},
+    {'title': 'Yoga', 'subtitle': 'Calm your mind and body.', 'image': 'assets/images/yoga.png'},
+    {'title': 'Strength Training', 'subtitle': 'Build your muscles effectively.', 'image': 'assets/images/strength.png'},
+    {'title': 'Cardio', 'subtitle': 'Boost your stamina and endurance.', 'image': 'assets/images/cardio.png'},
+    {'title': 'Stretching', 'subtitle': 'Improve your flexibility.', 'image': 'assets/images/stretching.png'},
   ];
 
   List<bool> isVisible = [];
