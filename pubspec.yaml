@@ -34,12 +34,12 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/Cbum.png
-    - assets/images/yoga.webp
-    - assets/images/strength.webp
-    - assets/images/cardio.webp
-    - assets/images/stretching.webp
+    - assets/images/yoga.png
+    - assets/images/strength.png
+    - assets/images/cardio.png
+    - assets/images/stretching.png
     - assets/images/body_stats_background.jpg
-    - assets/images/profile_icon.webp
-    - assets/images/body_stats_icon.webp
-    - assets/images/exercises_icon.webp
-    - assets/images/schedule_icon.webp
+    - assets/images/profile_icon.png
+    - assets/images/body_stats_icon.jpg
+    - assets/images/exercises_icon.png
+    - assets/images/schedule_icon.png
