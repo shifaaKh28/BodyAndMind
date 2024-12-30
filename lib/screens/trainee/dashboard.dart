@@ -2,27 +2,60 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../Trainer/profile/profile_screen.dart';
 import 'profile/schedule.dart';
 import 'profile/exercises.dart';
 import 'profile/body_stats.dart';
-import 'profile/profile_screen.dart';
+import 'profile/chat.dart';
 
 class TraineeDashboard extends StatefulWidget {
   @override
   _TraineeDashboardState createState() => _TraineeDashboardState();
 }
 
-class _TraineeDashboardState extends State<TraineeDashboard> {
+class _TraineeDashboardState extends State<TraineeDashboard>
+    with SingleTickerProviderStateMixin {
   String _traineeName = '';
-  String _traineeEmail = '';
   bool _isLoading = true;
-  final _chatController = TextEditingController();
   int _currentTabIndex = 0;
+
+  late AnimationController _animationController;
+  late List<Animation<Offset>> _slideAnimations;
 
   @override
   void initState() {
     super.initState();
     _fetchTraineeDetails();
+
+    // Initialize the animation controller
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1500),
+    );
+
+    // Create staggered slide animations for each card
+    _slideAnimations = List.generate(3, (index) {
+      return Tween<Offset>(
+        begin: Offset(0, 1),
+        end: Offset(0, 0),
+      ).animate(CurvedAnimation(
+        parent: _animationController,
+        curve: Interval(
+          0.2 * index,
+          1.0,
+          curve: Curves.easeOut,
+        ),
+      ));
+    });
+
+    // Start the animation
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchTraineeDetails() async {
@@ -36,27 +69,13 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
 
       setState(() {
         _traineeName = traineeDoc['name'] ?? 'Trainee';
-        _traineeEmail = user.email ?? 'Unknown';
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
         _traineeName = 'Trainee';
-        _traineeEmail = 'Unknown';
         _isLoading = false;
       });
-    }
-  }
-
-  void _sendMessage() async {
-    final message = _chatController.text.trim();
-    if (message.isNotEmpty) {
-      await FirebaseFirestore.instance.collection('chatMessages').add({
-        'email': _traineeEmail,
-        'message': message,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-      _chatController.clear();
     }
   }
 
@@ -65,10 +84,10 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background
+          // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/background.jpg',
+              'assets/images/trainees_dashboard.jpg',
               fit: BoxFit.cover,
             ),
           ),
@@ -80,22 +99,29 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
           SafeArea(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: Colors.white))
-                : Column(
+                : IndexedStack(
+              index: _currentTabIndex,
               children: [
-                if (_currentTabIndex == 0) _buildHeader(),
-                Expanded(
-                  child: _currentTabIndex == 0
-                      ? _buildDashboardCards()
-                      : _currentTabIndex == 1
-                      ? _buildChatSection()
-                      : _buildFeedbackScreen(),
-                ),
+                _buildDashboardContent(),
+                ChatScreen(),
+                _buildFeedbackScreen(),
               ],
             ),
           ),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  Widget _buildDashboardContent() {
+    return Column(
+      children: [
+        _buildHeader(),
+        Expanded(
+          child: _buildDashboardCards(),
+        ),
+      ],
     );
   }
 
@@ -108,12 +134,14 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => TraineeProfileScreen()),
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreen(isTrainer: false),
+                ),
               );
             },
             child: CircleAvatar(
               radius: 30,
-              backgroundImage: AssetImage('assets/images/profile_icon.png'),
+              backgroundImage: AssetImage('assets/images/profile.jpg'),
             ),
           ),
           SizedBox(width: 16),
@@ -142,161 +170,57 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
 
   Widget _buildDashboardCards() {
     List<Map<String, dynamic>> dashboardItems = [
-      {
-        'title': 'Schedule',
-        'image': 'assets/images/schedule_icon.png',
-        'screen': ScheduleScreen()
-      },
-      {
-        'title': 'Exercises',
-        'image': 'assets/images/exercises_icon.png',
-        'screen': ExercisesScreen()
-      },
-      {
-        'title': 'Body Stats',
-        'image': 'assets/images/body_stats_icon.jpg',
-        'screen': BodyStatsScreen()
-      },
+      {'title': 'Schedule', 'screen': ScheduleScreen()},
+      {'title': 'Exercises', 'screen': ExercisesScreen()},
+      {'title': 'Body Stats', 'screen': BodyStatsScreen()},
     ];
 
-    return GridView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: dashboardItems.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 1,
-        mainAxisSpacing: 20,
-        childAspectRatio: 3,
-      ),
-      itemBuilder: (context, index) {
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => dashboardItems[index]['screen'],
-              ),
-            );
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(
-                image: AssetImage(dashboardItems[index]['image']),
-                fit: BoxFit.cover,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black38,
-                  blurRadius: 8,
-                  offset: Offset(2, 4),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              dashboardItems[index]['title'],
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                backgroundColor: Colors.black54,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildChatSection() {
-    return Column(
-      children: [
-        Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('chatMessages')
-                .orderBy('timestamp', descending: true)
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                );
-              }
-
-              final messages = snapshot.data!.docs;
-              return ListView.builder(
-                reverse: true,
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  final messageData =
-                  messages[index].data() as Map<String, dynamic>;
-                  final email = messageData['email'] ?? 'Unknown';
-                  final message = messageData['message'] ?? '';
-
-                  return Column(
-                    crossAxisAlignment: email == _traineeEmail
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        email,
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                      Container(
-                        margin: EdgeInsets.symmetric(vertical: 5),
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: email == _traineeEmail
-                              ? Colors.blueAccent
-                              : Colors.grey[800],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          message,
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(dashboardItems.length, (index) {
+            final item = dashboardItems[index];
+            return SlideTransition(
+              position: _slideAnimations[index],
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => item['screen']),
                   );
                 },
-              );
-            },
-          ),
-        ),
-        _buildMessageInput(),
-      ],
-    );
-  }
-
-  Widget _buildMessageInput() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _chatController,
-            style: TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              hintText: 'Type a message',
-              hintStyle: TextStyle(color: Colors.white54),
-              filled: true,
-              fillColor: Colors.grey[800],
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
+                child: Container(
+                  margin: EdgeInsets.only(bottom: 16),
+                  padding: EdgeInsets.all(16),
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black38,
+                        blurRadius: 8,
+                        offset: Offset(2, 4),
+                      ),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    item['title'],
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          }),
         ),
-        IconButton(
-          icon: Icon(Icons.send, color: Colors.blue),
-          onPressed: _sendMessage,
-        ),
-      ],
+      ),
     );
   }
 
@@ -319,11 +243,11 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
       },
       selectedItemColor: Colors.blueAccent,
       unselectedItemColor: Colors.white70,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Colors.black,
       items: [
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
-          label: 'Home',
+          label: 'Dashboard',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.chat),
