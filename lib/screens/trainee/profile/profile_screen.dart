@@ -176,9 +176,12 @@ class _TraineeProfileScreenState extends State<TraineeProfileScreen> {
                       ),
                       padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     ),
-                    child: Text('Save Changes',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      'Save Changes',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                   ),
+
               ],
             ),
           ),
