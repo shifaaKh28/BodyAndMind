@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../Trainer/dashboard.dart';
 import 'dashboard.dart';
+import 'google_auth_service.dart'; // Import GoogleAuthService
 
 class TraineeLoginScreen extends StatefulWidget {
   @override
@@ -10,241 +12,317 @@ class TraineeLoginScreen extends StatefulWidget {
 }
 
 class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
-  final _emailOrPhoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final GoogleAuthService _googleAuthService = GoogleAuthService(); // Instantiate GoogleAuthService
   bool _isLoading = false;
 
   Future<void> _loginTrainee() async {
-    // Existing login functionality (email and phone)
-    final input = _emailOrPhoneController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (input.isEmpty || password.isEmpty) {
-      _showError('Please fill in all fields');
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please fill in all fields')),
+      );
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: input,
-        password: password,
+      // Authenticate with Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
-      _navigateToDashboard();
-    } catch (e) {
-      _showError('Login failed: ${e.toString()}');
-    }
 
-    setState(() => _isLoading = false);
-  }
+      final uid = userCredential.user!.uid;
 
-  Future<void> _googleSignIn() async {
-    setState(() => _isLoading = true);
+      // Check if the user exists in the 'trainers' collection
+      DocumentSnapshot trainerDoc = await FirebaseFirestore.instance
+          .collection('trainers')
+          .doc(uid)
+          .get();
 
-    try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (trainerDoc.exists) {
+        // If the user is a trainer, redirect to the Trainer Dashboard
+        String trainerName = trainerDoc['name'] ?? 'Trainer';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Welcome, $trainerName! Redirecting to Trainer Dashboard...')),
+        );
 
-      if (googleUser == null) {
-        setState(() => _isLoading = false);
-        return; // User canceled the sign-in process.
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => TrainerDashboard()),
+        );
+        return; // Stop further execution here
       }
 
-      final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
+      // If not a trainer, check if the user exists in the 'trainees' collection
+      DocumentSnapshot traineeDoc = await FirebaseFirestore.instance
+          .collection('trainees')
+          .doc(uid)
+          .get();
 
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+      if (traineeDoc.exists) {
+        // User is a trainee, proceed to Trainee Dashboard
+        String traineeName = traineeDoc['name'] ?? 'Trainee';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Welcome, $traineeName! Redirecting to Trainee Dashboard...')),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => TraineeDashboard()),
+        );
+      } else {
+        // User is not registered as a trainee
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You are not registered as a trainee.')),
+        );
+
+        // Sign out the user to prevent unauthorized access
+        FirebaseAuth.instance.signOut();
+      }
+    } on FirebaseAuthException catch (e) {
+      // Handle Firebase Authentication errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.message}')),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
-      final UserCredential userCredential =
-      await FirebaseAuth.instance.signInWithCredential(credential);
+  Future<void> _loginWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
 
-      // Store additional user data in Firestore if necessary
-      final user = userCredential.user;
-      if (user != null) {
-        final userDoc = FirebaseFirestore.instance
+    try {
+      final userCredential = await _googleAuthService.signInWithGoogle();
+      if (userCredential != null) {
+        final uid = userCredential.user!.uid;
+
+        // Check if the user exists in the 'trainees' collection
+        final traineeDoc = await FirebaseFirestore.instance
             .collection('trainees')
-            .doc(user.uid);
+            .doc(uid)
+            .get();
 
-        final docSnapshot = await userDoc.get();
-        if (!docSnapshot.exists) {
-          await userDoc.set({
-            'email': user.email,
-            'name': user.displayName,
-            'photoUrl': user.photoURL,
-            'role': 'trainee',
-          });
+        if (traineeDoc.exists) {
+          // User is a trainee
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Welcome, ${traineeDoc['name']}!')),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => TraineeDashboard()),
+          );
+        } else {
+          // User is not registered as a trainee
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('You are not registered as a trainee.')),
+          );
+
+          // Sign out the user to prevent unauthorized access
+          FirebaseAuth.instance.signOut();
         }
       }
-
-      _navigateToDashboard();
     } catch (e) {
-      _showError('Google Sign-In failed: ${e.toString()}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to sign in with Google: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty || !RegExp(r'\S+@\S+\.\S+').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
     }
 
-    setState(() => _isLoading = false);
-  }
+    try {
+      // Send password reset email
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
-  void _navigateToDashboard() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => TraineeDashboard()),
-    );
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Password reset email sent!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/Cbum.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
             child: Container(
-              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black54,
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Title
-                  Text(
-                    'Login',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-
-                  // Email/Phone Field
-                  TextField(
-                    controller: _emailOrPhoneController,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'Email or Phone',
-                      labelStyle: TextStyle(color: Colors.white54),
-                      prefixIcon: Icon(Icons.email, color: Colors.blue),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white24),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blue),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Password Field
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      labelStyle: TextStyle(color: Colors.white54),
-                      prefixIcon: Icon(Icons.lock, color: Colors.blue),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white24),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blue),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Login Button
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _loginTrainee,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? CircularProgressIndicator(color: Colors.black)
-                        : Text(
-                      'Login',
-                      style: TextStyle(fontSize: 16, color: Colors.black),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-
-                  // Google Sign-In Button
-                  ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _googleSignIn,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    icon: Icon(Icons.g_mobiledata, color: Colors.white),
-                    label: Text(
-                      'Sign in with Google',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-
-                  SizedBox(height: 10),
-
-                  // Forgot Password
-                  TextButton(
-                    onPressed: () {},
-                    child: Text('Forgot Password?',
-                        style: TextStyle(color: Colors.blue)),
-                  ),
-
-                  // Register Option
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Not a member yet? ',
-                          style: TextStyle(color: Colors.white70)),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pushNamed(context, '/traineeRegister');
-                        },
-                        child: Text(
-                          'Register here',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.8),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Container(
+                padding: EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Text(
+                        'Login (התחברות)',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Email (דוא"ל)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        prefixIcon: Icon(Icons.email_outlined, color: Colors.green),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: 'Password (סיסמה)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        prefixIcon: Icon(Icons.lock_outline, color: Colors.green),
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _loginTrainee,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? CircularProgressIndicator(color: Colors.white)
+                            : Text(
+                          'Login',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoading ? null : _loginWithGoogle,
+                        icon: Icon(Icons.login),
+                        label: Text('Sign in with Google'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Center(
+                      child: TextButton(
+                        onPressed: _resetPassword,
+                        child: Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Not a trainee yet? ',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 14,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(context, '/traineeRegister');
+                            },
+                            child: Text(
+                              'Register here',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
