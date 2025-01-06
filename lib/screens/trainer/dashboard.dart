@@ -82,7 +82,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/background.jpg',
+              'assets/images/trainer_background.jpg',
               fit: BoxFit.cover,
             ),
           ),
@@ -455,7 +455,6 @@ class _TrainerDashboardState extends State<TrainerDashboard>
   }
 
 }
-
 
 
 
