@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:swe_project/screens/common/chat_screen.dart';
-import 'package:swe_project/screens/trainer/profile/schedule.dart';
-import 'profile/profile_screen.dart';
+import '../trainer/profile/profile_screen.dart';
+import 'profile/schedule.dart';
+import 'profile/exercises.dart';
+import 'profile/body_stats.dart';
 
-
-class TrainerDashboard extends StatefulWidget {
+class TraineeDashboard extends StatefulWidget {
   @override
-  _TrainerDashboardState createState() => _TrainerDashboardState();
+  _TraineeDashboardState createState() => _TraineeDashboardState();
 }
 
-class _TrainerDashboardState extends State<TrainerDashboard>
+class _TraineeDashboardState extends State<TraineeDashboard>
     with SingleTickerProviderStateMixin {
-  String _trainerName = '';
+  String _traineeName = '';
   bool _isLoading = true;
   int _currentTabIndex = 0;
 
@@ -23,26 +24,30 @@ class _TrainerDashboardState extends State<TrainerDashboard>
   @override
   void initState() {
     super.initState();
-    _fetchTrainerDetails();
+    _fetchTraineeDetails();
 
-    // Animation Controller Initialization
+    // Initialize animation controller for staggered card animation
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1500),
     );
 
-    // Creating staggered animations for dashboard items
-    _slideAnimations = List.generate(4, (index) {
+    // Create staggered animations for dashboard cards
+    _slideAnimations = List.generate(3, (index) {
       return Tween<Offset>(
         begin: Offset(0, 1),
         end: Offset(0, 0),
       ).animate(CurvedAnimation(
         parent: _animationController,
-        curve: Interval(0.2 * index, 1.0, curve: Curves.easeOut),
+        curve: Interval(
+          0.2 * index,
+          1.0,
+          curve: Curves.easeOut,
+        ),
       ));
     });
 
-    // Starting animations
+    // Start animations
     _animationController.forward();
   }
 
@@ -52,23 +57,23 @@ class _TrainerDashboardState extends State<TrainerDashboard>
     super.dispose();
   }
 
-  Future<void> _fetchTrainerDetails() async {
+  Future<void> _fetchTraineeDetails() async {
     try {
       final user = FirebaseAuth.instance.currentUser!;
       final uid = user.uid;
 
-      final trainerDoc = await FirebaseFirestore.instance
-          .collection('trainers')
+      final traineeDoc = await FirebaseFirestore.instance
+          .collection('trainees')
           .doc(uid)
           .get();
 
       setState(() {
-        _trainerName = trainerDoc['name'] ?? 'Trainer';
+        _traineeName = traineeDoc['name'] ?? 'Trainee';
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _trainerName = 'Trainer';
+        _traineeName = 'Trainee';
         _isLoading = false;
       });
     }
@@ -82,11 +87,10 @@ class _TrainerDashboardState extends State<TrainerDashboard>
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/background.jpg',
+              'assets/images/trainees_dashboard.jpg',
               fit: BoxFit.cover,
             ),
           ),
-          // Semi-transparent overlay
           Positioned.fill(
             child: Container(
               color: Colors.black.withOpacity(0.6),
@@ -94,14 +98,12 @@ class _TrainerDashboardState extends State<TrainerDashboard>
           ),
           SafeArea(
             child: _isLoading
-                ? Center(
-                child: CircularProgressIndicator(color: Colors.blueAccent))
+                ? Center(child: CircularProgressIndicator(color: Colors.white))
                 : IndexedStack(
               index: _currentTabIndex,
               children: [
                 _buildDashboardContent(),
-                ChatScreen(userType: 'trainer'),
-                TrainerSchedule(), // Schedule screen
+                ChatScreen(userType: 'trainee'), // Use ChatScreen for Chat
                 _buildFeedbackScreen(),
               ],
             ),
@@ -128,13 +130,12 @@ class _TrainerDashboardState extends State<TrainerDashboard>
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          // Profile Icon Navigation
           GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ProfileScreen(isTrainer: true),
+                  builder: (context) => ProfileScreen(isTrainer: false),
                 ),
               );
             },
@@ -148,7 +149,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Hello, $_trainerName',
+                'Hello, $_traineeName',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -157,7 +158,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
               ),
               SizedBox(height: 4),
               Text(
-                'Let’s manage your tasks!',
+                'Let’s get started!',
                 style: TextStyle(color: Colors.white70),
               ),
             ],
@@ -169,10 +170,9 @@ class _TrainerDashboardState extends State<TrainerDashboard>
 
   Widget _buildDashboardCards() {
     List<Map<String, dynamic>> dashboardItems = [
-      {'title': 'Manage Sessions', 'onTap': _showManageSessions},
-      {'title': 'Chat with Trainees', 'onTap': () => _navigateToChat()},
-      {'title': 'View Schedule', 'onTap': _navigateToSchedule},
-      {'title': 'View Feedback', 'onTap': _showFeedbackDialog},
+      {'title': 'Schedule', 'screen': ScheduleScreen()},
+      {'title': 'Exercises', 'screen': ExercisesScreen()},
+      {'title': 'Body Stats', 'screen': BodyStatsScreen()},
     ];
 
     return Center(
@@ -185,7 +185,12 @@ class _TrainerDashboardState extends State<TrainerDashboard>
             return SlideTransition(
               position: _slideAnimations[index],
               child: GestureDetector(
-                onTap: item['onTap'],
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => item['screen']),
+                  );
+                },
                 child: Container(
                   margin: EdgeInsets.only(bottom: 16),
                   padding: EdgeInsets.all(16),
@@ -219,199 +224,6 @@ class _TrainerDashboardState extends State<TrainerDashboard>
     );
   }
 
-
-  void _showManageSessions() {
-    final _formKey = GlobalKey<FormState>();
-    String? sessionType;
-    DateTime? selectedDate;
-    TimeOfDay? selectedTime;
-    final _capacityController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Manage Sessions'),
-          content: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: sessionType,
-                    items: ['Gym', 'Yoga', 'Swimming', 'Boxing', 'Stretching']
-                        .map((type) => DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        sessionType = value;
-                      });
-                    },
-                    decoration: InputDecoration(labelText: 'Session Type'),
-                    validator: (value) =>
-                    value == null ? 'Please select a session type' : null,
-                  ),
-                  SizedBox(height: 10),
-                  TextFormField(
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      labelText: selectedDate == null
-                          ? 'Select Date'
-                          : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}',
-                    ),
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2100),
-                      );
-                      if (date != null) {
-                        setState(() {
-                          selectedDate = date;
-                        });
-                      }
-                    },
-                    validator: (value) =>
-                    selectedDate == null ? 'Please select a date' : null,
-                  ),
-                  SizedBox(height: 10),
-                  TextFormField(
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      labelText: selectedTime == null
-                          ? 'Select Time'
-                          : '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}',
-                    ),
-                    onTap: () async {
-                      final time = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.now(),
-                      );
-                      if (time != null) {
-                        setState(() {
-                          selectedTime = time;
-                        });
-                      }
-                    },
-                    validator: (value) =>
-                    selectedTime == null ? 'Please select a time' : null,
-                  ),
-                  SizedBox(height: 10),
-                  TextFormField(
-                    controller: _capacityController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(labelText: 'Capacity'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter capacity';
-                      }
-                      final capacity = int.tryParse(value);
-                      if (capacity == null || capacity <= 0) {
-                        return 'Enter a valid capacity';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (_formKey.currentState!.validate()) {
-                  final session = {
-                    'trainerId': FirebaseAuth.instance.currentUser!.uid,
-                    'type': sessionType,
-                    'date': selectedDate,
-                    'time':
-                    '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}',
-                    'capacity': int.parse(_capacityController.text),
-                    'enrolledUsers': [],
-                  };
-
-                  await FirebaseFirestore.instance.collection('sessions').add(session);
-
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Session created successfully!')),
-                  );
-                }
-              },
-              child: Text('Create'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _navigateToChat() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatScreen(userType: 'trainer'),
-      ),
-    );
-  }
-
-  void _navigateToSchedule() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TrainerSchedule(),
-      ),
-    );
-  }
-
-  void _showFeedbackDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('View Feedback'),
-          content: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('feedback').snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return Center(child: CircularProgressIndicator());
-              }
-
-              final feedbackList = snapshot.data!.docs;
-
-              return ListView.builder(
-                shrinkWrap: true,
-                itemCount: feedbackList.length,
-                itemBuilder: (context, index) {
-                  final feedback = feedbackList[index];
-                  return ListTile(
-                    title: Text(feedback['traineeName'] ?? 'Unknown'),
-                    subtitle: Text(feedback['comments'] ?? 'No Comments'),
-                  );
-                },
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Widget _buildFeedbackScreen() {
     return Center(
       child: Text(
@@ -434,7 +246,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
       backgroundColor: Colors.black,
       items: [
         BottomNavigationBarItem(
-          icon: Icon(Icons.dashboard),
+          icon: Icon(Icons.home),
           label: 'Dashboard',
         ),
         BottomNavigationBarItem(
@@ -442,23 +254,10 @@ class _TrainerDashboardState extends State<TrainerDashboard>
           label: 'Chat',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.schedule),
-          label: 'Schedule',
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.feedback),
           label: 'Feedback',
         ),
       ],
-      type: BottomNavigationBarType.fixed, // Ensures all labels/icons are displayed
     );
   }
-
 }
-
-
-
-
-
-
-
