@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'otp.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/material.dart';
 
 class TraineeRegisterScreen extends StatefulWidget {
   @override
@@ -12,11 +12,11 @@ class _TraineeRegisterScreenState extends State<TraineeRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController(); // Added Phone Controller
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _registerUser({required bool isTrainer}) async {
+  Future<void> _registerUserWithEmail() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -32,8 +32,10 @@ class _TraineeRegisterScreenState extends State<TraineeRegisterScreen> {
       );
 
       // Save user details to Firestore
-      await FirebaseFirestore.instance.collection('trainees').doc(
-          userCredential.user!.uid).set({
+      await FirebaseFirestore.instance
+          .collection('trainees')
+          .doc(userCredential.user!.uid)
+          .set({
         'email': _emailController.text.trim(),
         'name': _nameController.text.trim(),
         'phone': _phoneController.text.trim(),
@@ -42,26 +44,18 @@ class _TraineeRegisterScreenState extends State<TraineeRegisterScreen> {
 
       // Notify user of successful registration
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration Successful! Please verify OTP.')),
+        SnackBar(content: Text('Registration Successful! Please verify your email.')),
       );
 
-      // Navigate to OTP Screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OTPScreen(email: _emailController.text),
-        ),
-      );
+      // Send Email Verification
+      await userCredential.user!.sendEmailVerification();
     } on FirebaseAuthException catch (e) {
-      // Handle Firebase Authentication errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.message}')),
       );
     } catch (e) {
-      // Handle unexpected errors
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('An unexpected error occurred: ${e.toString()}')),
+        SnackBar(content: Text('An unexpected error occurred: ${e.toString()}')),
       );
     } finally {
       setState(() {
@@ -70,10 +64,63 @@ class _TraineeRegisterScreenState extends State<TraineeRegisterScreen> {
     }
   }
 
+  Future<void> _googleSignUp() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        setState(() => _isLoading = false);
+        return; // User canceled the sign-in process.
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+      await googleUser.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Store additional user data in Firestore if necessary
+      final user = userCredential.user;
+      if (user != null) {
+        final userDoc = FirebaseFirestore.instance
+            .collection('trainees')
+            .doc(user.uid);
+
+        final docSnapshot = await userDoc.get();
+        if (!docSnapshot.exists) {
+          await userDoc.set({
+            'email': user.email,
+            'name': user.displayName,
+            'photoUrl': user.photoURL,
+            'role': 'trainee',
+          });
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registration Successful via Google!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Sign-Up failed: ${e.toString()}')),
+      );
+    }
+
+    setState(() => _isLoading = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Set dark background
+      backgroundColor: Colors.black,
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -81,7 +128,7 @@ class _TraineeRegisterScreenState extends State<TraineeRegisterScreen> {
             child: Container(
               padding: EdgeInsets.all(20.0),
               decoration: BoxDecoration(
-                color: Colors.grey[900], // Dark container background
+                color: Colors.grey[900],
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -176,9 +223,7 @@ class _TraineeRegisterScreenState extends State<TraineeRegisterScreen> {
                     // Register Button
                     Center(
                       child: ElevatedButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () => _registerUser(isTrainer: false),
+                        onPressed: _isLoading ? null : _registerUserWithEmail,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           padding: EdgeInsets.symmetric(
@@ -201,6 +246,27 @@ class _TraineeRegisterScreenState extends State<TraineeRegisterScreen> {
                         ),
                       ),
                     ),
+
+                    SizedBox(height: 16),
+
+                    // Google Sign-Up Button
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoading ? null : _googleSignUp,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        icon: Icon(Icons.g_mobiledata, color: Colors.white),
+                        label: Text(
+                          'Sign up with Google',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -211,7 +277,7 @@ class _TraineeRegisterScreenState extends State<TraineeRegisterScreen> {
     );
   }
 
-// Dark Themed TextField Builder
+  // Dark Themed TextField Builder
   Widget _buildDarkTextField({
     required TextEditingController controller,
     required String label,
@@ -225,15 +291,12 @@ class _TraineeRegisterScreenState extends State<TraineeRegisterScreen> {
       obscureText: obscureText,
       keyboardType: keyboardType,
       style: TextStyle(color: Colors.white),
-      // Text color
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.white70),
-        // Label text color
         prefixIcon: Icon(icon, color: Colors.blue),
         filled: true,
         fillColor: Colors.grey[800],
-        // Input field background
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
