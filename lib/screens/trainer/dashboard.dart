@@ -82,7 +82,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/trainer_background.jpg',
+              'assets/images/background.jpg',
               fit: BoxFit.cover,
             ),
           ),
@@ -240,7 +240,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
                 children: [
                   DropdownButtonFormField<String>(
                     value: sessionType,
-                    items: ['Gym', 'Yoga', 'Swimming', 'Boxing', 'CrossFit']
+                    items: ['Gym', 'Yoga', 'Swimming', 'Boxing', 'Stretching']
                         .map((type) => DropdownMenuItem(
                       value: type,
                       child: Text(type),
@@ -455,6 +455,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
   }
 
 }
+
 
 
 
