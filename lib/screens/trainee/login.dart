@@ -1,5 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'dashboard.dart';
 
 class TraineeLoginScreen extends StatefulWidget {
@@ -13,6 +15,7 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
   bool _isLoading = false;
 
   Future<void> _loginTrainee() async {
+    // Existing login functionality (email and phone)
     final input = _emailOrPhoneController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -23,100 +26,66 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
 
     setState(() => _isLoading = true);
 
-    if (_isPhoneNumber(input)) {
-      await _loginWithPhone(input);
-    } else {
-      await _loginWithEmail(input, password);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: input,
+        password: password,
+      );
+      _navigateToDashboard();
+    } catch (e) {
+      _showError('Login failed: ${e.toString()}');
     }
 
     setState(() => _isLoading = false);
   }
 
-  bool _isPhoneNumber(String input) {
-    final phoneRegex = RegExp(r'^0\d{9}$'); // Israeli phone format
-    return phoneRegex.hasMatch(input);
-  }
+  Future<void> _googleSignIn() async {
+    setState(() => _isLoading = true);
 
-  Future<void> _loginWithEmail(String email, String password) async {
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        setState(() => _isLoading = false);
+        return; // User canceled the sign-in process.
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+      await googleUser.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
+
+      final UserCredential userCredential =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Store additional user data in Firestore if necessary
+      final user = userCredential.user;
+      if (user != null) {
+        final userDoc = FirebaseFirestore.instance
+            .collection('trainees')
+            .doc(user.uid);
+
+        final docSnapshot = await userDoc.get();
+        if (!docSnapshot.exists) {
+          await userDoc.set({
+            'email': user.email,
+            'name': user.displayName,
+            'photoUrl': user.photoURL,
+            'role': 'trainee',
+          });
+        }
+      }
+
       _navigateToDashboard();
     } catch (e) {
-      _showError('Invalid email or password');
+      _showError('Google Sign-In failed: ${e.toString()}');
     }
-  }
 
-  Future<void> _loginWithPhone(String phoneNumber) async {
-    FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);
-    String formattedPhone = '+972' + phoneNumber.substring(1);
-
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: formattedPhone,
-      verificationCompleted: (credential) async {
-        await FirebaseAuth.instance.signInWithCredential(credential);
-        _navigateToDashboard();
-      },
-      verificationFailed: (error) {
-        _showError('Phone login failed: ${error.message}');
-      },
-      codeSent: (verificationId, resendToken) {
-        _showOTPDialog(verificationId);
-      },
-      codeAutoRetrievalTimeout: (verificationId) {},
-    );
-  }
-
-  void _showOTPDialog(String verificationId) {
-    final _otpController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey[900],
-          title: Text('Enter OTP', style: TextStyle(color: Colors.white)),
-          content: TextField(
-            controller: _otpController,
-            style: TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              labelText: 'OTP Code',
-              labelStyle: TextStyle(color: Colors.white54),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white54),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel', style: TextStyle(color: Colors.white70)),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  final credential = PhoneAuthProvider.credential(
-                    verificationId: verificationId,
-                    smsCode: _otpController.text.trim(),
-                  );
-                  await FirebaseAuth.instance.signInWithCredential(credential);
-                  _navigateToDashboard();
-                } catch (e) {
-                  _showError('Invalid OTP');
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              child: Text('Submit'),
-            ),
-          ],
-        );
-      },
-    );
+    setState(() => _isLoading = false);
   }
 
   void _navigateToDashboard() {
@@ -223,6 +192,25 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
                       style: TextStyle(fontSize: 16, color: Colors.black),
                     ),
                   ),
+                  SizedBox(height: 10),
+
+                  // Google Sign-In Button
+                  ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _googleSignIn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    icon: Icon(Icons.g_mobiledata, color: Colors.white),
+                    label: Text(
+                      'Sign in with Google',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+
                   SizedBox(height: 10),
 
                   // Forgot Password
