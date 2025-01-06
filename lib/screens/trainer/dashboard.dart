@@ -82,7 +82,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/background.jpg',
+              'assets/images/trainer_background.jpg',
               fit: BoxFit.cover,
             ),
           ),
@@ -170,9 +170,8 @@ class _TrainerDashboardState extends State<TrainerDashboard>
   Widget _buildDashboardCards() {
     List<Map<String, dynamic>> dashboardItems = [
       {'title': 'Manage Sessions', 'onTap': _showManageSessions},
-      {'title': 'Chat with Trainees', 'onTap': () => _navigateToChat()},
       {'title': 'View Schedule', 'onTap': _navigateToSchedule},
-      {'title': 'View Feedback', 'onTap': _showFeedbackDialog},
+
     ];
 
     return Center(
@@ -441,10 +440,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
           icon: Icon(Icons.chat),
           label: 'Chat',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.schedule),
-          label: 'Schedule',
-        ),
+
         BottomNavigationBarItem(
           icon: Icon(Icons.feedback),
           label: 'Feedback',
@@ -455,7 +451,6 @@ class _TrainerDashboardState extends State<TrainerDashboard>
   }
 
 }
-
 
 
 
