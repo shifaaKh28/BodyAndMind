@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:swe_project/screens/common/chat_screen.dart';
-import '../Trainer/profile/profile_screen.dart';
+import '../trainer/profile/profile_screen.dart';
 import 'profile/schedule.dart';
 import 'profile/exercises.dart';
 import 'profile/body_stats.dart';
-import 'profile/chat.dart';
 
 class TraineeDashboard extends StatefulWidget {
   @override
@@ -28,13 +26,13 @@ class _TraineeDashboardState extends State<TraineeDashboard>
     super.initState();
     _fetchTraineeDetails();
 
-    // Initialize the animation controller
+    // Initialize animation controller for staggered card animation
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1500),
     );
 
-    // Create staggered slide animations for each card
+    // Create staggered animations for dashboard cards
     _slideAnimations = List.generate(3, (index) {
       return Tween<Offset>(
         begin: Offset(0, 1),
@@ -49,7 +47,7 @@ class _TraineeDashboardState extends State<TraineeDashboard>
       ));
     });
 
-    // Start the animation
+    // Start animations
     _animationController.forward();
   }
 
@@ -63,6 +61,7 @@ class _TraineeDashboardState extends State<TraineeDashboard>
     try {
       final user = FirebaseAuth.instance.currentUser!;
       final uid = user.uid;
+
       final traineeDoc = await FirebaseFirestore.instance
           .collection('trainees')
           .doc(uid)
@@ -104,7 +103,7 @@ class _TraineeDashboardState extends State<TraineeDashboard>
               index: _currentTabIndex,
               children: [
                 _buildDashboardContent(),
-                ChatScreen(),
+                ChatScreen(userType: 'trainee'), // Use ChatScreen for Chat
                 _buildFeedbackScreen(),
               ],
             ),
