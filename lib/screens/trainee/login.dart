@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import '../Trainer/dashboard.dart';
+import '../common/facebook_auth_service.dart';
 import 'dashboard.dart';
-import 'google_auth_service.dart'; // Import GoogleAuthService
+import '../common/google_auth_service.dart'; // Import GoogleAuthService
 
 class TraineeLoginScreen extends StatefulWidget {
   @override
@@ -14,7 +14,7 @@ class TraineeLoginScreen extends StatefulWidget {
 class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final GoogleAuthService _googleAuthService = GoogleAuthService(); // Instantiate GoogleAuthService
+  final GoogleAuthService _googleAuthService = GoogleAuthService(); // Google Auth Service
   bool _isLoading = false;
 
   Future<void> _loginTrainee() async {
@@ -45,32 +45,30 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
           .get();
 
       if (trainerDoc.exists) {
-        // If the user is a trainer, redirect to the Trainer Dashboard
+        // Redirect to Trainer Dashboard
         String trainerName = trainerDoc['name'] ?? 'Trainer';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Welcome, $trainerName! Redirecting to Trainer Dashboard...')),
         );
-
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => TrainerDashboard()),
         );
-        return; // Stop further execution here
+        return;
       }
 
-      // If not a trainer, check if the user exists in the 'trainees' collection
+      // Check if the user exists in the 'trainees' collection
       DocumentSnapshot traineeDoc = await FirebaseFirestore.instance
           .collection('trainees')
           .doc(uid)
           .get();
 
       if (traineeDoc.exists) {
-        // User is a trainee, proceed to Trainee Dashboard
+        // Redirect to Trainee Dashboard
         String traineeName = traineeDoc['name'] ?? 'Trainee';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Welcome, $traineeName! Redirecting to Trainee Dashboard...')),
         );
-
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => TraineeDashboard()),
@@ -80,12 +78,10 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('You are not registered as a trainee.')),
         );
-
-        // Sign out the user to prevent unauthorized access
         FirebaseAuth.instance.signOut();
       }
     } on FirebaseAuthException catch (e) {
-      // Handle Firebase Authentication errors
+      // Handle errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.message}')),
       );
@@ -113,7 +109,6 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
             .get();
 
         if (traineeDoc.exists) {
-          // User is a trainee
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Welcome, ${traineeDoc['name']}!')),
           );
@@ -122,18 +117,57 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
             MaterialPageRoute(builder: (context) => TraineeDashboard()),
           );
         } else {
-          // User is not registered as a trainee
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('You are not registered as a trainee.')),
           );
-
-          // Sign out the user to prevent unauthorized access
           FirebaseAuth.instance.signOut();
         }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to sign in with Google: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loginWithFacebook() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final FacebookAuthService facebookAuthService = FacebookAuthService();
+      final user = await facebookAuthService.signInWithFacebook();
+
+      if (user != null) {
+        // Check if the user exists in the 'trainees' collection
+        final traineeDoc = await FirebaseFirestore.instance
+            .collection('trainees')
+            .doc(user.uid)
+            .get();
+
+        if (traineeDoc.exists) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Welcome, ${traineeDoc['name']}!')),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => TraineeDashboard()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('You are not registered as a trainee.')),
+          );
+          FirebaseAuth.instance.signOut();
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Facebook Login failed: $e')),
       );
     } finally {
       setState(() {
@@ -153,9 +187,7 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
     }
 
     try {
-      // Send password reset email
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Password reset email sent!')),
       );
@@ -272,6 +304,21 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
                         label: Text('Sign in with Google'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.redAccent,
+                          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoading ? null : _loginWithFacebook,
+                        icon: Icon(Icons.facebook),
+                        label: Text('Sign in with Facebook'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
                           padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
