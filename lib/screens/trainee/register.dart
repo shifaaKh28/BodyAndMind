@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 
@@ -63,6 +64,58 @@ class _TraineeRegisterScreenState extends State<TraineeRegisterScreen> {
       });
     }
   }
+  
+
+  Future<void> _facebookSignUp() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final LoginResult result = await FacebookAuth.instance.login();
+
+      if (result.status == LoginStatus.success) {
+        final AccessToken accessToken = result.accessToken!;
+        final OAuthCredential facebookAuthCredential =
+        FacebookAuthProvider.credential(accessToken.token);
+
+        final UserCredential userCredential =
+        await FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+
+        final user = userCredential.user;
+        if (user != null) {
+          final userDoc = FirebaseFirestore.instance.collection('trainees').doc(user.uid);
+
+          final docSnapshot = await userDoc.get();
+          if (!docSnapshot.exists) {
+            await userDoc.set({
+              'email': user.email,
+              'name': user.displayName,
+              'photoUrl': user.photoURL,
+              'role': 'trainee',
+            });
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration Successful via Facebook!')),
+        );
+      } else if (result.status == LoginStatus.cancelled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Facebook Sign-Up cancelled by the user.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Facebook Sign-Up failed: ${result.message}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Facebook Sign-Up failed: ${e.toString()}')),
+      );
+    }
+
+    setState(() => _isLoading = false);
+  }
+
 
   Future<void> _googleSignUp() async {
     setState(() => _isLoading = true);
@@ -263,6 +316,23 @@ class _TraineeRegisterScreenState extends State<TraineeRegisterScreen> {
                         icon: Icon(Icons.g_mobiledata, color: Colors.white),
                         label: Text(
                           'Sign up with Google',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoading ? null : _facebookSignUp,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[800],
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        icon: Icon(Icons.facebook, color: Colors.white),
+                        label: Text(
+                          'Sign up with Facebook',
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
