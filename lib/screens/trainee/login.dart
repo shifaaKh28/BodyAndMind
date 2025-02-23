@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../Trainer/dashboard.dart';
+
 import '../common/facebook_auth_service.dart';
 import 'dashboard.dart';
 import '../common/google_auth_service.dart'; // Import GoogleAuthService
@@ -52,7 +52,7 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => TrainerDashboard()),
+          MaterialPageRoute(builder: (context) => TraineeDashboard()),
         );
         return;
       }
