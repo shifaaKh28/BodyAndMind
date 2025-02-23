@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -29,6 +31,8 @@ class _TrainerNotificationsState extends State<TrainerNotifications> {
       return;
     }
 
+
+
     // ✅ Create a new notification document in Firestore
     await FirebaseFirestore.instance.collection('notifications').add({
       'sessionId': _selectedSessionId,
@@ -41,11 +45,61 @@ class _TrainerNotificationsState extends State<TrainerNotifications> {
     }).catchError((error) {
       print("🔥 Error saving notification: $error");
     });
+    // Get FCM Tokens
+    List<String> tokens = [];
+    for (String traineeId in trainees) {
+      var traineeDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(traineeId)
+          .get();
+      if (traineeDoc.exists && traineeDoc.data()?['fcmToken'] != null) {
+        tokens.add(traineeDoc.data()?['fcmToken']);
+      }
+    }
+
+    print("✅ Found ${tokens.length} FCM Tokens");
+    if (tokens.isNotEmpty) {
+      await _sendPushNotification(tokens);
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Notification Sent!')));
     setState(() {
       _message = '';
     });
+  }
+
+  Future<void> _sendPushNotification(List<String> tokens) async {
+    const String serverKey = "YOUR_FCM_SERVER_KEY";  // Replace with your FCM Key
+
+    final Uri url = Uri.parse('https://fcm.googleapis.com/fcm/send');
+    final Map<String, dynamic> body = {
+      "registration_ids": tokens,
+      "notification": {
+        "title": "New Message from Your Trainer",
+        "body": "Check the app for the latest update from your trainer.",
+        "sound": "default"
+      },
+      "priority": "high"
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "key=$serverKey"
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        print("✅ Push Notification Sent Successfully!");
+      } else {
+        print("❌ Failed to send notification: ${response.body}");
+      }
+    } catch (e) {
+      print("❌ Error sending FCM notification: $e");
+    }
   }
 
 
