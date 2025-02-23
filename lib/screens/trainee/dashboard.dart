@@ -6,6 +6,7 @@ import '../trainer/profile/profile_screen.dart';
 import 'profile/schedule.dart';
 import 'profile/exercises.dart';
 import 'profile/body_stats.dart';
+import 'profile/receivenotifications.dart'; // ✅ Import Notifications
 
 class TraineeDashboard extends StatefulWidget {
   @override
@@ -26,7 +27,7 @@ class _TraineeDashboardState extends State<TraineeDashboard>
     super.initState();
     _fetchTraineeDetails();
 
-    // Initialize animation controller for staggered card animation
+    // Initialize animation controller for staggered animations
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1500),
@@ -47,7 +48,6 @@ class _TraineeDashboardState extends State<TraineeDashboard>
       ));
     });
 
-    // Start animations
     _animationController.forward();
   }
 
@@ -103,8 +103,9 @@ class _TraineeDashboardState extends State<TraineeDashboard>
               index: _currentTabIndex,
               children: [
                 _buildDashboardContent(),
-                ChatScreen(userType: 'trainee'), // Use ChatScreen for Chat
+                ChatScreen(userType: 'trainee'),
                 _buildFeedbackScreen(),
+                ReceiveNotifications(), // ✅ Added Notifications Screen
               ],
             ),
           ),
@@ -245,19 +246,12 @@ class _TraineeDashboardState extends State<TraineeDashboard>
       unselectedItemColor: Colors.white70,
       backgroundColor: Colors.black,
       items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Dashboard',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: 'Chat',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.feedback),
-          label: 'Feedback',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
+        BottomNavigationBarItem(icon: Icon(Icons.feedback), label: 'Feedback'),
+        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
       ],
+      type: BottomNavigationBarType.fixed,
     );
   }
 }
