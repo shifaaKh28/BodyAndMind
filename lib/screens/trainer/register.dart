@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../Trainee//otp.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+
+
 
 class TrainerRegisterScreen extends StatefulWidget {
   @override
@@ -82,18 +85,121 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
     }
   }
 
+  Future<void> _facebookSignUp() async {
+    setState(() => _isLoading = true);
 
+    try {
+      final LoginResult result = await FacebookAuth.instance.login();
+
+      if (result.status == LoginStatus.success) {
+        final AccessToken accessToken = result.accessToken!;
+        final OAuthCredential facebookAuthCredential =
+        FacebookAuthProvider.credential(accessToken.token);
+
+        final UserCredential userCredential =
+        await FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+
+        final user = userCredential.user;
+        if (user != null) {
+          final userDoc = FirebaseFirestore.instance.collection('trainers').doc(user.uid);
+
+          final docSnapshot = await userDoc.get();
+          if (!docSnapshot.exists) {
+            await userDoc.set({
+              'email': user.email,
+              'name': user.displayName,
+              'photoUrl': user.photoURL,
+              'role': 'trainer',
+            });
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration Successful via Facebook!')),
+        );
+      } else if (result.status == LoginStatus.cancelled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Facebook Sign-Up cancelled by the user.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Facebook Sign-Up failed: ${result.message}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Facebook Sign-Up failed: ${e.toString()}')),
+      );
+    }
+
+    setState(() => _isLoading = false);
+  }
+
+  Future<void> _googleSignUp() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        setState(() => _isLoading = false);
+        return; // User canceled the sign-in process.
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+      await googleUser.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Store additional user data in Firestore if necessary
+      final user = userCredential.user;
+      if (user != null) {
+        final userDoc = FirebaseFirestore.instance
+            .collection('trainers')
+            .doc(user.uid);
+
+        final docSnapshot = await userDoc.get();
+        if (!docSnapshot.exists) {
+          await userDoc.set({
+            'email': user.email,
+            'name': user.displayName,
+            'photoUrl': user.photoURL,
+            'role': 'trainer',
+          });
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registration Successful via Google!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Sign-Up failed: ${e.toString()}')),
+      );
+    }
+
+    setState(() => _isLoading = false);
+  }
+
+  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Dark background
+      backgroundColor: Colors.black,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Container(
             padding: EdgeInsets.all(20.0),
             decoration: BoxDecoration(
-              color: Colors.grey[900], // Dark container background
+              color: Colors.grey[900],
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -108,7 +214,6 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
                   Center(
                     child: Text(
                       'Register as Trainer',
@@ -120,16 +225,12 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
                     ),
                   ),
                   SizedBox(height: 20),
-
-                  // Name Field
                   _buildDarkTextField(
                     controller: _nameController,
                     label: 'Name',
                     icon: Icons.person_outline,
                   ),
                   SizedBox(height: 16),
-
-                  // Email Field
                   _buildDarkTextField(
                     controller: _emailController,
                     label: 'Email',
@@ -137,8 +238,6 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
                     keyboardType: TextInputType.emailAddress,
                   ),
                   SizedBox(height: 16),
-
-                  // Phone Field
                   _buildDarkTextField(
                     controller: _phoneController,
                     label: 'Phone Number',
@@ -146,8 +245,6 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
                     keyboardType: TextInputType.phone,
                   ),
                   SizedBox(height: 16),
-
-                  // Password Field
                   _buildDarkTextField(
                     controller: _passwordController,
                     label: 'Password',
@@ -156,14 +253,12 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
                   ),
                   SizedBox(height: 24),
 
-                  // Register Button
                   Center(
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _registerTrainer,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 50, vertical: 15),
+                        padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -174,6 +269,40 @@ class _TrainerRegisterScreenState extends State<TrainerRegisterScreen> {
                         'Register as Trainer',
                         style: TextStyle(fontSize: 16, color: Colors.white),
                       ),
+                    ),
+                  ),
+
+                  SizedBox(height: 16),
+
+                  // Google Sign-Up Button
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _googleSignUp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      icon: Icon(Icons.g_mobiledata, color: Colors.white),
+                      label: Text('Sign up with Google', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+
+                  // Facebook Sign-Up Button
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _facebookSignUp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[800],
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      icon: Icon(Icons.facebook, color: Colors.white),
+                      label: Text('Sign up with Facebook', style: TextStyle(color: Colors.white)),
                     ),
                   ),
                 ],
