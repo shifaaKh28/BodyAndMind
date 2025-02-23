@@ -198,6 +198,13 @@ class _TraineeLoginScreenState extends State<TraineeLoginScreen> {
     }
   }
 
+  Future<void> storeUserFCMToken(String token) async {
+    String uid = FirebaseAuth.instance.currentUser!.uid;
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'fcmToken': token,
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
