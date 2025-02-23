@@ -18,22 +18,35 @@ dependencies:
   firebase_core: ^3.8.1
   firebase_auth: ^5.3.4
   cloud_firestore: ^5.5.1
-  google_sign_in: ^5.4.2
-  http: ^1.2.2
-  image_picker: ^1.1.2
   firebase_storage: ^12.3.7
+  google_sign_in: ^5.4.2
+  flutter_facebook_auth: ^6.0.1
+
+  # Networking
+  http: ^1.2.2
+
+  # Image & Animation
+  image_picker: ^1.1.2
   flutter_animate: ^4.2.0
-  fl_chart: ^0.40.0
   lottie: ^2.0.0
 
+  # Charting
+  fl_chart: ^0.40.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  mockito: ^5.4.2 # For mock testing
+  build_runner: ^2.4.6 # Required to generate mock files
+
+  # UI Testing
+  integration_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true
+
   assets:
     - assets/images/Cbum.png
     - assets/images/yoga.png
@@ -47,4 +60,4 @@ flutter:
     - assets/images/schedule_icon.png
     - assets/images/trainees_dashboard.jpg
     - assets/images/chat_background.jpg
-    - assets/images/background.jpg
+    - assets/images/trainer_background.jpg
