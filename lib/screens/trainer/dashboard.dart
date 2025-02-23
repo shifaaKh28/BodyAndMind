@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:swe_project/screens/common/chat_screen.dart';
+import 'package:swe_project/screens/trainer/profile/notifications.dart';
 import 'package:swe_project/screens/trainer/profile/schedule.dart';
 import 'profile/profile_screen.dart';
-
 
 class TrainerDashboard extends StatefulWidget {
   @override
@@ -25,14 +25,12 @@ class _TrainerDashboardState extends State<TrainerDashboard>
     super.initState();
     _fetchTrainerDetails();
 
-    // Animation Controller Initialization
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1500),
     );
 
-    // Creating staggered animations for dashboard items
-    _slideAnimations = List.generate(4, (index) {
+    _slideAnimations = List.generate(5, (index) {
       return Tween<Offset>(
         begin: Offset(0, 1),
         end: Offset(0, 0),
@@ -42,7 +40,6 @@ class _TrainerDashboardState extends State<TrainerDashboard>
       ));
     });
 
-    // Starting animations
     _animationController.forward();
   }
 
@@ -79,14 +76,12 @@ class _TrainerDashboardState extends State<TrainerDashboard>
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/trainer_background.jpg',
+              'assets/images/background.jpg',
               fit: BoxFit.cover,
             ),
           ),
-          // Semi-transparent overlay
           Positioned.fill(
             child: Container(
               color: Colors.black.withOpacity(0.6),
@@ -101,7 +96,8 @@ class _TrainerDashboardState extends State<TrainerDashboard>
               children: [
                 _buildDashboardContent(),
                 ChatScreen(userType: 'trainer'),
-                TrainerSchedule(), // Schedule screen
+                TrainerSchedule(),
+                TrainerNotifications(trainerId: FirebaseAuth.instance.currentUser!.uid),
                 _buildFeedbackScreen(),
               ],
             ),
@@ -128,7 +124,6 @@ class _TrainerDashboardState extends State<TrainerDashboard>
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          // Profile Icon Navigation
           GestureDetector(
             onTap: () {
               Navigator.push(
@@ -170,8 +165,10 @@ class _TrainerDashboardState extends State<TrainerDashboard>
   Widget _buildDashboardCards() {
     List<Map<String, dynamic>> dashboardItems = [
       {'title': 'Manage Sessions', 'onTap': _showManageSessions},
+      {'title': 'Chat with Trainees', 'onTap': _navigateToChat},
       {'title': 'View Schedule', 'onTap': _navigateToSchedule},
-
+      {'title': 'Send Notifications', 'onTap': _navigateToNotifications},
+      {'title': 'View Feedback', 'onTap': _showFeedbackDialog},
     ];
 
     return Center(
@@ -218,7 +215,6 @@ class _TrainerDashboardState extends State<TrainerDashboard>
     );
   }
 
-
   void _showManageSessions() {
     final _formKey = GlobalKey<FormState>();
     String? sessionType;
@@ -239,7 +235,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
                 children: [
                   DropdownButtonFormField<String>(
                     value: sessionType,
-                    items: ['Gym', 'Yoga', 'Swimming', 'Boxing', 'Stretching']
+                    items: ['Gym', 'Yoga', 'Swimming', 'Cardio', 'Stretching']
                         .map((type) => DropdownMenuItem(
                       value: type,
                       child: Text(type),
@@ -354,6 +350,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
     );
   }
 
+
   void _navigateToChat() {
     Navigator.push(
       context,
@@ -368,6 +365,15 @@ class _TrainerDashboardState extends State<TrainerDashboard>
       context,
       MaterialPageRoute(
         builder: (context) => TrainerSchedule(),
+      ),
+    );
+  }
+
+  void _navigateToNotifications() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrainerNotifications(trainerId: FirebaseAuth.instance.currentUser!.uid),
       ),
     );
   }
@@ -440,20 +446,20 @@ class _TrainerDashboardState extends State<TrainerDashboard>
           icon: Icon(Icons.chat),
           label: 'Chat',
         ),
-
+        BottomNavigationBarItem(
+          icon: Icon(Icons.schedule),
+          label: 'Schedule',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.notifications),
+          label: 'Notifications',
+        ),
         BottomNavigationBarItem(
           icon: Icon(Icons.feedback),
           label: 'Feedback',
         ),
       ],
-      type: BottomNavigationBarType.fixed, // Ensures all labels/icons are displayed
+      type: BottomNavigationBarType.fixed,
     );
   }
-
 }
-
-
-
-
-
-
