@@ -7,6 +7,7 @@ import 'profile/schedule.dart';
 import 'profile/exercises.dart';
 import 'profile/body_stats.dart';
 import 'profile/receivenotifications.dart'; // ✅ Import Notifications
+import 'package:swe_project/screens/common/feedback_screen.dart' as feedback_screen;
 
 class TraineeDashboard extends StatefulWidget {
   @override
@@ -226,12 +227,7 @@ class _TraineeDashboardState extends State<TraineeDashboard>
   }
 
   Widget _buildFeedbackScreen() {
-    return Center(
-      child: Text(
-        'Feedback Section Coming Soon!',
-        style: TextStyle(color: Colors.white, fontSize: 18),
-      ),
-    );
+    return feedback_screen.FeedbackScreen(userType: 'Trainee'); // Use the FeedbackScreen widget we defined earlier
   }
 
   Widget _buildBottomNavigationBar() {
