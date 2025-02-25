@@ -5,6 +5,7 @@ import 'package:swe_project/screens/common/chat_screen.dart';
 import 'package:swe_project/screens/trainer/profile/notifications.dart';
 import 'package:swe_project/screens/trainer/profile/schedule.dart';
 import 'profile/profile_screen.dart';
+import 'package:swe_project/screens/common/feedback_screen.dart' as feedback_screen;
 
 class TrainerDashboard extends StatefulWidget {
   @override
@@ -417,10 +418,19 @@ class _TrainerDashboardState extends State<TrainerDashboard>
     );
   }
 
+  void _showFeedbackScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => feedback_screen.FeedbackScreen(userType: 'Trainer'),
+      ),
+    );
+  }
+
   Widget _buildFeedbackScreen() {
     return Center(
       child: Text(
-        'Feedback Section Coming Soon!',
+        'Thank you For Your Feedback!',
         style: TextStyle(color: Colors.white, fontSize: 18),
       ),
     );
@@ -433,6 +443,9 @@ class _TrainerDashboardState extends State<TrainerDashboard>
         setState(() {
           _currentTabIndex = index;
         });
+        if (_currentTabIndex == 4) {
+          _showFeedbackScreen();
+        }
       },
       selectedItemColor: Colors.blueAccent,
       unselectedItemColor: Colors.white70,
@@ -460,6 +473,7 @@ class _TrainerDashboardState extends State<TrainerDashboard>
         ),
       ],
       type: BottomNavigationBarType.fixed,
-    );
+    )
+    ;
   }
 }
