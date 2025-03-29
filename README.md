@@ -1,5 +1,6 @@
 
 # **Body & Mind Gym - Flutter App**  
+![image_alt](https://github.com/shifaaKh28/BodyAndMind/blob/master/Screenshot%202025-03-29%20140005.png)
 
 ## **📌 Overview**  
 **Body & Mind Gym** is a  designed for **trainers and trainees**. The app facilitates **session scheduling, exercise tracking, real-time chat, push notifications, and feedback collection** to enhance gym management and user experience. The backend services are managed using **Firebase**.
@@ -67,4 +68,3 @@ flutter run
 🔗 [GitHub Repository](https://github.com/shifaaKh28/SW_project)  
 
 ---
-![image_alt](https://github.com/shifaaKh28/BodyAndMind/blob/master/Screenshot%202025-03-29%20140005.png)
