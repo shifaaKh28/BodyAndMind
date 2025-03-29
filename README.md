@@ -1,4 +1,4 @@
-![image_alt](https://github.com/shifaaKh28/BodyAndMind/blob/master/Screenshot%202025-03-29%20140005.png)
+
 # **Body & Mind Gym - Flutter App**  
 
 ## **📌 Overview**  
@@ -67,3 +67,4 @@ flutter run
 🔗 [GitHub Repository](https://github.com/shifaaKh28/SW_project)  
 
 ---
+![image_alt](https://github.com/shifaaKh28/BodyAndMind/blob/master/Screenshot%202025-03-29%20140005.png)
